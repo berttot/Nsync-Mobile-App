@@ -6,37 +6,52 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
-  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
 import { Colors } from '@/constants/colors';
+import { mockUsers, mockBoards, mockTasks } from '@/constants/mockData';
 
 const { width } = Dimensions.get('window');
 
-export default function DashboardScreen() {
+export default function AdminDashboard() {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Mock data - will be replaced with Firebase data
+  if (!user) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
+
+  // Use a modern header component
+  const Header = require('@/components/AppHeader').default;
+
+  // Calculate admin statistics
   const stats = {
-    totalTasks: 24,
-    completedTasks: 18,
-    inProgressTasks: 4,
-    todoTasks: 2,
-    totalBoards: 3,
+    totalUsers: mockUsers.length,
+    totalBoards: mockBoards.length,
+    totalTasks: mockTasks.length,
+    completedTasks: mockTasks.filter(t => t.status === 'done').length,
+    activeUsers: mockUsers.filter(u => u.role === 'user').length,
   };
 
   const recentActivities = [
-    { id: 1, action: 'Task "Design UI" completed', time: '2 hours ago' },
-    { id: 2, action: 'New task "API Integration" assigned', time: '4 hours ago' },
-    { id: 3, action: 'Comment on "Database Setup"', time: '6 hours ago' },
+    { id: 1, action: 'New user "Sarah Smith" registered', time: '2 hours ago', type: 'user' },
+    { id: 2, action: 'Task "Design Login Screen" completed', time: '4 hours ago', type: 'task' },
+    { id: 3, action: 'Board "Marketing" created', time: '6 hours ago', type: 'board' },
+    { id: 4, action: 'Task assigned to "John Doe"', time: '8 hours ago', type: 'task' },
   ];
 
   const quickActions = [
-    { id: 1, title: 'Create Task', icon: '+', color: Colors.primary.main, onPress: () => router.push('/(tabs)/tasks') },
-    { id: 2, title: 'View Boards', icon: '⊞', color: Colors.secondary.main, onPress: () => router.push('/(tabs)/boards') },
-    { id: 3, title: 'My Tasks', icon: '✓', color: Colors.text.secondary, onPress: () => router.push('/(tabs)/tasks') },
-    { id: 4, title: 'Profile', icon: '👤', color: Colors.text.tertiary, onPress: () => router.push('/(tabs)/profile') },
+    { id: 1, title: 'Manage Users', icon: '👥', color: Colors.primary.main, onPress: () => router.push('/(admin)/users') },
+    { id: 2, title: 'Create Board', icon: '📋', color: Colors.text.secondary, onPress: () => router.push('/(admin)/boards') },
+    { id: 3, title: 'View Tasks', icon: '✓', color: Colors.text.tertiary, onPress: () => router.push('/(admin)/tasks') },
+    { id: 4, title: 'User Reports', icon: '📊', color: Colors.warning, onPress: () => Alert.alert('Reports', 'Analytics coming soon') },
   ];
 
   const StatCard = ({ title, value, subtitle, color }: any) => (
@@ -47,15 +62,26 @@ export default function DashboardScreen() {
     </View>
   );
 
-  const ActivityItem = ({ action, time }: any) => (
-    <View style={styles.activityItem}>
-      <View style={styles.activityDot} />
-      <View style={styles.activityContent}>
-        <Text style={styles.activityAction}>{action}</Text>
-        <Text style={styles.activityTime}>{time}</Text>
+  const ActivityItem = ({ action, time, type }: any) => {
+    const getIcon = () => {
+      switch (type) {
+        case 'user': return '👤';
+        case 'task': return '✓';
+        case 'board': return '📋';
+        default: return '📄';
+      }
+    };
+
+    return (
+      <View style={styles.activityItem}>
+        <Text style={styles.activityIcon}>{getIcon()}</Text>
+        <View style={styles.activityContent}>
+          <Text style={styles.activityAction}>{action}</Text>
+          <Text style={styles.activityTime}>{time}</Text>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   const QuickAction = ({ title, icon, color, onPress }: any) => (
     <TouchableOpacity style={[styles.quickAction, { backgroundColor: color }]} onPress={onPress}>
@@ -64,35 +90,40 @@ export default function DashboardScreen() {
     </TouchableOpacity>
   );
 
+  const handleLogout = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: () => {
+            logout();
+            // Use router.push instead of router.replace for logout
+            router.push('/(auth)/login' as any);
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.welcomeText}>Welcome back!</Text>
-          <Text style={styles.userName}>John Doe</Text>
-        </View>
-        <View style={styles.brandingHeader}>
-          <Text style={styles.brandingText}>
-            <Text style={styles.brandingTextN}>N</Text>
-            <Text style={styles.brandingTextSYN}>SYN</Text>
-            <Text style={styles.brandingTextC}>C</Text>
-          </Text>
-          <View style={styles.brandingUnderline} />
-          <Text style={styles.brandingSubtitle}>TEAM WORKSPACE</Text>
-        </View>
-      </View>
-                {/* Stats Overview */}
+      <Header title="Admin Dashboard" subtitle="" />
+
+      {/* Admin Stats */}
       <View style={styles.statsContainer}>
-        <StatCard title="Total Tasks" value={stats.totalTasks} subtitle="All tasks" color={Colors.primary.main} />
-        <StatCard title="Completed" value={stats.completedTasks} subtitle="Done" color={Colors.secondary.main} />
-        <StatCard title="In Progress" value={stats.inProgressTasks} subtitle="Working" color={Colors.text.secondary} />
-        <StatCard title="To Do" value={stats.todoTasks} subtitle="Pending" color={Colors.text.tertiary} />
+        <StatCard title="Total Users" value={stats.totalUsers} subtitle="All users" color={Colors.primary.main} />
+        <StatCard title="Total Boards" value={stats.totalBoards} subtitle="All boards" color={Colors.text.secondary} />
+        <StatCard title="Total Tasks" value={stats.totalTasks} subtitle="All tasks" color={Colors.text.tertiary} />
+        <StatCard title="Completed" value={stats.completedTasks} subtitle="Done" color={Colors.success} />
       </View>
 
       {/* Quick Actions */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <Text style={styles.sectionTitle}>Admin Actions</Text>
         <View style={styles.quickActionsContainer}>
           {quickActions.map((action) => (
             <QuickAction key={action.id} {...action} />
@@ -102,7 +133,7 @@ export default function DashboardScreen() {
 
       {/* Recent Activities */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Activities</Text>
+        <Text style={styles.sectionTitle}>System Activity</Text>
         <View style={styles.activitiesContainer}>
           {recentActivities.map((activity) => (
             <ActivityItem key={activity.id} {...activity} />
@@ -110,23 +141,22 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      {/* Board Overview */}
+      {/* Quick Stats */}
       <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Your Boards</Text>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/boards')}>
-            <Text style={styles.seeAllText}>See all</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.boardsContainer}>
-          <TouchableOpacity style={styles.boardCard}>
-            <Text style={styles.boardTitle}>Development</Text>
-            <Text style={styles.boardStats}>12 tasks • 3 active</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.boardCard}>
-            <Text style={styles.boardTitle}>Design</Text>
-            <Text style={styles.boardStats}>8 tasks • 2 active</Text>
-          </TouchableOpacity>
+        <Text style={styles.sectionTitle}>User Overview</Text>
+        <View style={styles.userOverview}>
+          <View style={styles.userStat}>
+            <Text style={styles.userStatValue}>{stats.activeUsers}</Text>
+            <Text style={styles.userStatLabel}>Active Users</Text>
+          </View>
+          <View style={styles.userStat}>
+            <Text style={styles.userStatValue}>{mockUsers.filter(u => u.role === 'admin').length}</Text>
+            <Text style={styles.userStatLabel}>Admins</Text>
+          </View>
+          <View style={styles.userStat}>
+            <Text style={styles.userStatValue}>{Math.round((stats.completedTasks / stats.totalTasks) * 100)}%</Text>
+            <Text style={styles.userStatLabel}>Task Completion</Text>
+          </View>
         </View>
       </View>
     </ScrollView>
@@ -160,35 +190,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 4,
   },
-  brandingHeader: {
-    alignItems: 'center',
-  },
-  brandingText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
-  brandingTextN: {
-    color: Colors.text.primary,
-  },
-  brandingTextSYN: {
-    color: Colors.secondary.main,
-  },
-  brandingTextC: {
-    color: Colors.text.primary,
-  },
-  brandingUnderline: {
+  logoutButton: {
     width: 40,
-    height: 2,
-    backgroundColor: Colors.secondary.main,
-    marginTop: 2,
-    marginBottom: 4,
+    height: 40,
+    backgroundColor: Colors.background.primary,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border.primary,
   },
-  brandingSubtitle: {
-    fontSize: 8,
-    color: Colors.text.primary,
-    fontWeight: '600',
-    letterSpacing: 0.5,
+  logoutText: {
+    fontSize: 18,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -229,21 +242,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 24,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: Colors.text.primary,
-  },
-  seeAllText: {
-    fontSize: 14,
-    color: Colors.secondary.main,
-    fontWeight: '600',
+    marginBottom: 16,
   },
   quickActionsContainer: {
     flexDirection: 'row',
@@ -288,11 +291,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  activityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.secondary.main,
+  activityIcon: {
+    fontSize: 20,
     marginRight: 12,
   },
   activityContent: {
@@ -308,29 +308,29 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     marginTop: 2,
   },
-  boardsContainer: {
+  userOverview: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  boardCard: {
-    width: (width - 50) / 2,
+    justifyContent: 'space-around',
     backgroundColor: Colors.background.primary,
-    padding: 16,
     borderRadius: 12,
+    padding: 20,
     shadowColor: Colors.shadow.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 3,
   },
-  boardTitle: {
-    fontSize: 16,
+  userStat: {
+    alignItems: 'center',
+  },
+  userStatValue: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: Colors.text.primary,
-    marginBottom: 8,
   },
-  boardStats: {
+  userStatLabel: {
     fontSize: 12,
     color: Colors.text.secondary,
+    marginTop: 4,
   },
 });
