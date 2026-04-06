@@ -86,21 +86,33 @@ export default function UserBoards() {
       </View>
       <View style={styles.boardStats}>
         <View style={styles.statItem}>
-          <Ionicons name="people-outline" size={16} color={Colors.text.secondary} />
+          <Ionicons
+            name="people-outline"
+            size={16}
+            color={Colors.text.secondary}
+          />
           <Text style={styles.statValue}>
             {Array.isArray(board.members) ? board.members.length : 0}
           </Text>
           <Text style={styles.statLabel}>Members</Text>
         </View>
         <View style={styles.statItem}>
-          <Ionicons name="checkbox-outline" size={16} color={Colors.text.secondary} />
+          <Ionicons
+            name="checkbox-outline"
+            size={16}
+            color={Colors.text.secondary}
+          />
           <Text style={styles.statValue}>--</Text>
           <Text style={styles.statLabel}>Tasks</Text>
         </View>
       </View>
       <View style={styles.boardFooter}>
         <View style={styles.boardDateWrap}>
-          <Ionicons name="calendar-outline" size={14} color={Colors.text.tertiary} />
+          <Ionicons
+            name="calendar-outline"
+            size={14}
+            color={Colors.text.tertiary}
+          />
           <Text style={styles.boardDate}>
             {formatCreatedAt(board.createdAt)}
           </Text>
@@ -122,7 +134,11 @@ export default function UserBoards() {
             style={styles.createBtn}
             onPress={() => setShowCreate(true)}
           >
-            <Ionicons name="add-outline" size={16} color={Colors.text.inverse} />
+            <Ionicons
+              name="add-outline"
+              size={16}
+              color={Colors.text.inverse}
+            />
             <Text style={styles.createBtnText}>Create Board</Text>
           </TouchableOpacity>
         </View>
@@ -157,7 +173,11 @@ export default function UserBoards() {
         {boards.length === 0 && (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconWrap}>
-              <Ionicons name="grid-outline" size={28} color={Colors.primary.main} />
+              <Ionicons
+                name="grid-outline"
+                size={28}
+                color={Colors.primary.main}
+              />
             </View>
             <Text style={styles.emptyTitle}>No Boards Available</Text>
             <Text style={styles.emptyDescription}>

@@ -4,8 +4,8 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
     FlatList,
+  StyleSheet,
     Modal,
-    StyleSheet,
     Text,
     TouchableOpacity,
     View,
@@ -36,10 +36,7 @@ export default function WorkspaceSwitcher() {
 
   return (
     <>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleOpen}
-      >
+      <TouchableOpacity style={styles.button} onPress={handleOpen}>
         <Text style={styles.buttonLabel}>Workspace</Text>
         <Text style={styles.buttonText} numberOfLines={1}>
           {currentWorkspace?.name ?? "No workspace"}
@@ -106,7 +103,7 @@ export default function WorkspaceSwitcher() {
                 style={[styles.actionButton, styles.closeButton]}
                 onPress={() => setOpen(false)}
               >
-                <Text style={styles.actionText}>Close</Text>
+                <Text style={styles.closeButtonText}>Close</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -118,13 +115,12 @@ export default function WorkspaceSwitcher() {
 
 const styles = StyleSheet.create({
   button: {
-    width: 190,
-    maxWidth: 190,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
+    flex: 1,
+    minWidth: 0,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 14,
     backgroundColor: Colors.background.secondary,
-    marginRight: 8,
     borderWidth: 1,
     borderColor: Colors.border.primary,
   },
@@ -132,12 +128,13 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     fontSize: 11,
     fontWeight: "600",
-    marginBottom: 2,
+    marginBottom: 3,
+    letterSpacing: 0.2,
   },
   buttonText: {
     color: Colors.text.primary,
-    fontWeight: "700",
-    fontSize: 13,
+    fontWeight: "800",
+    fontSize: 15,
   },
   overlay: {
     flex: 1,
@@ -226,9 +223,15 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     backgroundColor: Colors.background.secondary,
+    borderWidth: 1,
+    borderColor: Colors.border.primary,
   },
   actionText: {
     color: Colors.text.inverse,
+    fontWeight: "700",
+  },
+  closeButtonText: {
+    color: Colors.text.secondary,
     fontWeight: "700",
   },
   empty: { padding: 12 },

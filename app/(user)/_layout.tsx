@@ -3,10 +3,10 @@ import React, { useEffect } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 
 import { HapticTab } from "@/components/haptic-tab";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 export default function UserTabLayout() {
@@ -40,8 +40,22 @@ export default function UserTabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+        tabBarInactiveTintColor: Colors[colorScheme ?? "light"].tabIconDefault,
         headerShown: false,
         tabBarButton: HapticTab,
+        tabBarHideOnKeyboard: true,
+        tabBarShowLabel: true,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "600",
+          marginBottom: 2,
+        },
+        tabBarStyle: {
+          height: 62,
+          paddingTop: 6,
+          paddingBottom: 6,
+          borderTopWidth: 1,
+        },
       }}
     >
       <Tabs.Screen
@@ -49,7 +63,7 @@ export default function UserTabLayout() {
         options={{
           title: "Dashboard",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="house.fill" color={color} />
+            <MaterialIcons size={24} name="dashboard" color={String(color)} />
           ),
         }}
       />
@@ -58,7 +72,7 @@ export default function UserTabLayout() {
         options={{
           title: "My Tasks",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="checklist" color={color} />
+            <MaterialIcons size={24} name="checklist" color={String(color)} />
           ),
         }}
       />
@@ -67,7 +81,7 @@ export default function UserTabLayout() {
         options={{
           title: "Boards",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="square.grid.2x2" color={color} />
+            <MaterialIcons size={24} name="view-module" color={String(color)} />
           ),
         }}
       />
@@ -76,7 +90,7 @@ export default function UserTabLayout() {
         options={{
           title: "Profile",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="person.fill" color={color} />
+            <MaterialIcons size={24} name="person" color={String(color)} />
           ),
         }}
       />

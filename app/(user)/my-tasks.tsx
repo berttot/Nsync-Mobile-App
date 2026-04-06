@@ -225,12 +225,20 @@ export default function UserTasks() {
 
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Ionicons name="list-outline" size={18} color={Colors.primary.main} />
+            <Ionicons
+              name="list-outline"
+              size={18}
+              color={Colors.primary.main}
+            />
             <Text style={styles.statValue}>{tasks.length}</Text>
             <Text style={styles.statLabel}>Total Tasks</Text>
           </View>
           <View style={styles.statCard}>
-            <Ionicons name="checkmark-circle-outline" size={18} color={Colors.success} />
+            <Ionicons
+              name="checkmark-circle-outline"
+              size={18}
+              color={Colors.success}
+            />
             <Text style={styles.statValue}>
               {tasks.filter((t) => t.status === "done").length}
             </Text>
@@ -249,7 +257,11 @@ export default function UserTasks() {
           {filteredTasks.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIconWrap}>
-                <Ionicons name="clipboard-outline" size={28} color={Colors.primary.main} />
+                <Ionicons
+                  name="clipboard-outline"
+                  size={28}
+                  color={Colors.primary.main}
+                />
               </View>
               <Text style={styles.emptyTitle}>No tasks assigned</Text>
               <Text style={styles.emptyDesc}>

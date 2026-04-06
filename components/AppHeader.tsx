@@ -3,14 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
-import {
-    Alert,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 
@@ -21,7 +14,12 @@ interface AppHeaderProps {
 
 export default function AppHeader({ title, subtitle }: AppHeaderProps) {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
+  const todayLabel = new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(new Date());
 
   const handleLogout = () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -40,36 +38,31 @@ export default function AppHeader({ title, subtitle }: AppHeaderProps) {
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <View style={styles.container}>
-        <View style={styles.titleContainer}>
-          {subtitle ? (
-            <Text
-              style={styles.subtitle}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {subtitle}
-            </Text>
-          ) : null}
-          <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-            {title ||
-              `Welcome${user?.name ? `, ${user.name.split(" ")[0]}` : ""}`}
-          </Text>
+        <View style={styles.topRow}>
+          <View style={styles.brandHero}>
+            <View style={styles.heroWordmark}>
+              <Text style={styles.heroLogoDark}>N</Text>
+              <Text style={styles.heroLogoGreen}>S</Text>
+              <Text style={styles.heroLogoDark}>YNC</Text>
+            </View>
+            <View style={styles.heroUnderline} />
+            <Text style={styles.heroTagline}>TEAM WORKSPACE</Text>
+          </View>
+
+          <View style={styles.designChip}>
+            <View style={styles.designDot} />
+            <MaterialIcons
+              name="auto-awesome"
+              size={14}
+              color={Colors.text.secondary}
+            />
+            <Text style={styles.designChipText}>{todayLabel}</Text>
+          </View>
         </View>
 
         <View style={styles.controlsRow}>
           <WorkspaceSwitcher />
           <View style={styles.actions}>
-            {user?.avatar ? (
-              <View style={styles.avatarContainer}>
-                <Text style={styles.avatarText}>{user.avatar}</Text>
-              </View>
-            ) : (
-              <Image
-                source={require("@/assets/images/react-logo.png")}
-                style={styles.avatarPlaceholder}
-              />
-            )}
-
             <TouchableOpacity
               onPress={handleLogout}
               style={styles.logoutButton}
@@ -91,7 +84,8 @@ export default function AppHeader({ title, subtitle }: AppHeaderProps) {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingTop: 10,
+    paddingBottom: 14,
     backgroundColor: Colors.background.primary,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border.primary,
@@ -99,49 +93,83 @@ const styles = StyleSheet.create({
   safeArea: {
     backgroundColor: Colors.background.primary,
   },
+  topRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 14,
+  },
+  brandHero: {
+    alignItems: "flex-start",
+    flexShrink: 1,
+  },
+  heroWordmark: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  heroLogoDark: {
+    color: Colors.text.primary,
+    fontSize: 48,
+    fontWeight: "900",
+    letterSpacing: -1,
+    lineHeight: 52,
+  },
+  heroLogoGreen: {
+    color: Colors.primary.main,
+    fontSize: 48,
+    fontWeight: "900",
+    letterSpacing: -1,
+    lineHeight: 52,
+  },
+  heroUnderline: {
+    width: 16,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.primary.main,
+    marginTop: 2,
+    marginBottom: 8,
+    marginLeft: 31,
+  },
+  heroTagline: {
+    fontSize: 11,
+    color: Colors.text.secondary,
+    fontWeight: "700",
+    letterSpacing: 2.2,
+  },
+  designChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: Colors.background.secondary,
+    borderWidth: 1,
+    borderColor: Colors.border.primary,
+    marginTop: 10,
+  },
+  designDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.primary.main,
+  },
+  designChipText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: Colors.text.secondary,
+    letterSpacing: 0.2,
+  },
   controlsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 12,
-  },
-  titleContainer: {
-    width: "100%",
-  },
-  subtitle: {
-    fontSize: 12,
-    color: Colors.text.secondary,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: Colors.text.primary,
-    lineHeight: 36,
+    gap: 10,
   },
   actions: {
     flexDirection: "row",
     alignItems: "center",
     flexShrink: 0,
-  },
-  avatarContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.background.secondary,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  avatarText: {
-    fontSize: 18,
-  },
-  avatarPlaceholder: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    marginRight: 12,
   },
   logoutButton: {
     width: 40,

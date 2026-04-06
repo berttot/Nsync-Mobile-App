@@ -65,6 +65,17 @@ export default function BoardDetail() {
     in_progress: tasks.filter((t) => t.status === "in_progress"),
     done: tasks.filter((t) => t.status === "done"),
   } as const;
+  const [activeStatus, setActiveStatus] =
+    useState<keyof typeof columns>("todo");
+
+  const statusMeta: Array<{
+    key: keyof typeof columns;
+    label: string;
+  }> = [
+    { key: "todo", label: "To Do" },
+    { key: "in_progress", label: "In Progress" },
+    { key: "done", label: "Done" },
+  ];
 
   const moveTask = async (task: Task, toStatus: string) => {
     try {
@@ -172,38 +183,83 @@ export default function BoardDetail() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView horizontal contentContainerStyle={styles.columns}>
-          {(Object.keys(columns) as Array<keyof typeof columns>).map((col) => (
-            <View style={styles.col} key={col}>
-              <Text style={styles.colTitle}>
-                {col.replace("_", " ").toUpperCase()}
-              </Text>
-              {columns[col].map((task) => (
-                <View style={styles.card} key={task.id}>
-                  <Text style={styles.cardTitle}>{task.title}</Text>
-                  <View style={styles.cardActions}>
-                    {col !== "todo" && (
-                      <TouchableOpacity onPress={() => moveTask(task, "todo")}>
-                        <Text style={styles.action}>To Do</Text>
-                      </TouchableOpacity>
-                    )}
-                    {col !== "in_progress" && (
-                      <TouchableOpacity
-                        onPress={() => moveTask(task, "in_progress")}
-                      >
-                        <Text style={styles.action}>In Progress</Text>
-                      </TouchableOpacity>
-                    )}
-                    {col !== "done" && (
-                      <TouchableOpacity onPress={() => moveTask(task, "done")}>
-                        <Text style={styles.action}>Done</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
+        <View style={styles.statusTabsWrap}>
+          {statusMeta.map((status) => {
+            const isActive = activeStatus === status.key;
+            return (
+              <TouchableOpacity
+                key={status.key}
+                style={[styles.statusTab, isActive && styles.statusTabActive]}
+                onPress={() => setActiveStatus(status.key)}
+                activeOpacity={0.85}
+              >
+                <Text
+                  style={[
+                    styles.statusTabText,
+                    isActive && styles.statusTabTextActive,
+                  ]}
+                >
+                  {status.label}
+                </Text>
+                <View
+                  style={[
+                    styles.statusCount,
+                    isActive && styles.statusCountActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusCountText,
+                      isActive && styles.statusCountTextActive,
+                    ]}
+                  >
+                    {columns[status.key].length}
+                  </Text>
                 </View>
-              ))}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <ScrollView contentContainerStyle={styles.listWrap}>
+          {columns[activeStatus].length === 0 ? (
+            <View style={styles.emptyColumnState}>
+              <Text style={styles.emptyTitle}>No tasks in this list</Text>
+              <Text style={styles.emptyText}>Tap + New to add a task.</Text>
             </View>
-          ))}
+          ) : (
+            columns[activeStatus].map((task) => (
+              <View style={styles.card} key={task.id}>
+                <Text style={styles.cardTitle}>{task.title}</Text>
+                <View style={styles.cardActions}>
+                  {activeStatus !== "todo" && (
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() => moveTask(task, "todo")}
+                    >
+                      <Text style={styles.action}>To Do</Text>
+                    </TouchableOpacity>
+                  )}
+                  {activeStatus !== "in_progress" && (
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() => moveTask(task, "in_progress")}
+                    >
+                      <Text style={styles.action}>In Progress</Text>
+                    </TouchableOpacity>
+                  )}
+                  {activeStatus !== "done" && (
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() => moveTask(task, "done")}
+                    >
+                      <Text style={styles.action}>Done</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            ))
+          )}
         </ScrollView>
 
         <Modal visible={showCreate} animationType="slide" transparent>
@@ -260,13 +316,72 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   addText: { color: Colors.text.inverse, fontWeight: "700" },
-  columns: { padding: 16 },
-  col: { width: 300, marginRight: 12 },
-  colTitle: {
-    fontSize: 14,
+  statusTabsWrap: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+    gap: 8,
+  },
+  statusTab: {
+    flex: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border.primary,
+    backgroundColor: Colors.background.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  statusTabActive: {
+    borderColor: Colors.primary.main,
+    backgroundColor: "rgba(34,197,94,0.08)",
+  },
+  statusTabText: {
+    color: Colors.text.secondary,
     fontWeight: "700",
-    color: Colors.text.primary,
-    marginBottom: 8,
+    fontSize: 12,
+  },
+  statusTabTextActive: {
+    color: Colors.primary.main,
+  },
+  statusCount: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: Colors.background.secondary,
+    borderWidth: 1,
+    borderColor: Colors.border.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+  },
+  statusCountActive: {
+    backgroundColor: Colors.primary.main,
+    borderColor: Colors.primary.main,
+  },
+  statusCountText: {
+    color: Colors.text.secondary,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  statusCountTextActive: {
+    color: Colors.text.inverse,
+  },
+  listWrap: {
+    padding: 16,
+    paddingTop: 8,
+  },
+  emptyColumnState: {
+    backgroundColor: Colors.background.primary,
+    borderWidth: 1,
+    borderColor: Colors.border.primary,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    justifyContent: "center",
   },
   card: {
     backgroundColor: Colors.background.primary,
@@ -280,7 +395,20 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     marginBottom: 8,
   },
-  cardActions: { flexDirection: "row", justifyContent: "space-between" },
+  cardActions: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  actionButton: {
+    borderWidth: 1,
+    borderColor: Colors.border.primary,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: Colors.background.secondary,
+  },
   action: { color: Colors.primary.main, fontWeight: "600" },
   modalOverlay: {
     flex: 1,
