@@ -33,7 +33,9 @@ try {
   auth = initializeAuth(app, {
     persistence: getReactNativePersistence(ReactNativeAsyncStorage),
   });
-  console.debug("firebase: initializeAuth succeeded (React Native persistence enabled)");
+  console.debug(
+    "firebase: initializeAuth succeeded (React Native persistence enabled)",
+  );
 } catch (e) {
   console.warn("firebase: initializeAuth failed, falling back to getAuth", e);
   // If initializeAuth isn't available in this environment, use getAuth

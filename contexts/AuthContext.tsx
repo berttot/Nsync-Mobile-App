@@ -68,7 +68,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.debug("auth: state change", fbUser?.uid ?? null);
         if (fbUser) {
           try {
-            const profile = await getUserProfileFromFirebase(fbUser.uid, fbUser);
+            const profile = await getUserProfileFromFirebase(
+              fbUser.uid,
+              fbUser,
+            );
             console.debug("auth: loaded profile from firestore", profile);
             setUser(profile);
             await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
