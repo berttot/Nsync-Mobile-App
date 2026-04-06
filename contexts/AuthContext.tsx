@@ -1,27 +1,21 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-    createUserWithEmailAndPassword,
-    signOut as firebaseSignOut,
-    User as FirebaseUser,
-    GoogleAuthProvider,
-    onAuthStateChanged,
-    signInWithCredential,
-    signInWithEmailAndPassword,
-} from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+    DEMO_ADMIN_EMAIL,
+    DEMO_ADMIN_PASSWORD,
+    ENABLE_MOCK_AUTH,
+} from "@/config/authConfig";
+import {
+    getUserProfileFromFirebase,
+    registerWithEmail,
+    signOut as serviceSignOut,
+    signInWithEmail,
+    signInWithGoogleTokens,
+    subscribeAuthStateChange,
+} from "@/services/auth";
+import { User } from "@/types/user";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { auth, db } from "../firebase";
 
 const STORAGE_KEY = "nsync_user";
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: "admin" | "user";
-  joinDate: string;
-  avatar: string;
-}
 
 interface AuthContextType {
   user: User | null;
@@ -33,12 +27,13 @@ interface AuthContextType {
     name: string,
     email: string,
     password: string,
+    role?: "admin" | "user",
   ) => Promise<{ success: boolean; error?: string }>;
-  signInWithGoogle: (tokens: {
+  signInWithGoogle: (tokens?: {
     idToken?: string;
     accessToken?: string;
   }) => Promise<{ success: boolean; error?: string }>;
-  logout: () => Promise<void>;
+  logout: () => Promise<{ success: boolean; error?: string }>;
   isLoading: boolean;
 }
 
@@ -49,22 +44,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      async (fbUser: FirebaseUser | null) => {
+    let unsub = () => {};
+
+    (async () => {
+      // Try to hydrate user from AsyncStorage immediately so UI can show
+      // while the Firebase auth state initializes on device.
+      try {
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored) as User;
+            setUser(parsed);
+            console.debug("auth: hydrated user from AsyncStorage", parsed.id);
+          } catch (e) {
+            console.warn("auth: failed to parse stored user", e);
+          }
+        }
+      } catch (e) {
+        console.warn("auth: error reading AsyncStorage for user", e);
+      }
+
+      unsub = subscribeAuthStateChange(async (fbUser) => {
+        console.debug("auth: state change", fbUser?.uid ?? null);
         if (fbUser) {
           try {
-            const userDocRef = doc(db, "users", fbUser.uid);
-            const userDoc = await getDoc(userDocRef);
-            const data = userDoc.exists() ? (userDoc.data() as any) : null;
-            const profile: User = {
-              id: fbUser.uid,
-              email: fbUser.email || "",
-              name: data?.name ?? fbUser.displayName ?? "",
-              role: data?.role ?? "user",
-              joinDate: data?.joinDate ?? new Date().toISOString(),
-              avatar: data?.avatar ?? fbUser.photoURL ?? "",
-            };
+            const profile = await getUserProfileFromFirebase(fbUser.uid, fbUser);
+            console.debug("auth: loaded profile from firestore", profile);
             setUser(profile);
             await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
           } catch (error) {
@@ -72,113 +77,94 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         } else {
           setUser(null);
+          console.debug("auth: user signed out / no firebase user");
           AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
         }
         setIsLoading(false);
-      },
-    );
+      });
+    })();
 
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
-    try {
-      const cred = await signInWithEmailAndPassword(auth, email, password);
-      const fbUser = cred.user;
-      const userDoc = await getDoc(doc(db, "users", fbUser.uid));
-      const data = userDoc.exists() ? (userDoc.data() as any) : {};
-      const profile: User = {
-        id: fbUser.uid,
-        email: fbUser.email || email,
-        name: data?.name ?? fbUser.displayName ?? "",
-        role: data?.role ?? "user",
-        joinDate: data?.joinDate ?? new Date().toISOString(),
-        avatar: data?.avatar ?? fbUser.photoURL ?? "",
-      };
-      setUser(profile);
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
-      setIsLoading(false);
-      return { success: true, user: profile };
-    } catch (error: any) {
-      console.error("Login error", error);
-      setIsLoading(false);
-      return { success: false, error: error?.message ?? "Login failed" };
+    const res = await signInWithEmail(email, password);
+    if (res.success && res.user) {
+      setUser(res.user);
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(res.user));
     }
+    setIsLoading(false);
+    return res;
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (
+    name: string,
+    email: string,
+    password: string,
+    role: "admin" | "user" = "user",
+  ) => {
     setIsLoading(true);
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, email, password);
-      const fbUser = cred.user;
-      const profile: User = {
-        id: fbUser.uid,
-        email: fbUser.email || email,
-        name,
-        role: "user",
-        joinDate: new Date().toISOString(),
-        avatar: fbUser.photoURL ?? "",
-      };
-      await setDoc(doc(db, "users", fbUser.uid), profile);
-      setUser(profile);
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
-      setIsLoading(false);
-      return { success: true };
-    } catch (error: any) {
-      console.error("Register error", error);
-      setIsLoading(false);
-      return { success: false, error: error?.message ?? "Registration failed" };
+    const res = await registerWithEmail(name, email, password, role);
+    if (res.success && res.user) {
+      setUser(res.user);
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(res.user));
     }
+    setIsLoading(false);
+    return res;
   };
 
-  const signInWithGoogle = async (tokens: {
+  const signInWithGoogle = async (tokens?: {
     idToken?: string;
     accessToken?: string;
   }) => {
     setIsLoading(true);
-    try {
-      const credential = GoogleAuthProvider.credential(
-        tokens.idToken ?? null,
-        tokens.accessToken ?? null,
-      );
-      const cred = await signInWithCredential(auth, credential);
-      const fbUser = cred.user;
-      const userRef = doc(db, "users", fbUser.uid);
-      const userDoc = await getDoc(userRef);
-      if (!userDoc.exists()) {
-        const profile: User = {
-          id: fbUser.uid,
-          email: fbUser.email || "",
-          name: fbUser.displayName || "",
-          role: "user",
-          joinDate: new Date().toISOString(),
-          avatar: fbUser.photoURL || "",
-        };
-        await setDoc(userRef, profile);
-        setUser(profile);
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+    let res: any = { success: false };
+
+    // Try real Google tokens first when provided
+    if (tokens && (tokens.idToken || tokens.accessToken)) {
+      try {
+        res = await signInWithGoogleTokens(tokens);
+        if (res.success && res.user) {
+          setUser(res.user);
+          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(res.user));
+          setIsLoading(false);
+          return res;
+        }
+      } catch (e) {
+        console.warn("Google token signin failed, falling back if enabled", e);
       }
-      setIsLoading(false);
-      return { success: true };
-    } catch (error: any) {
-      console.error("Google sign-in error", error);
-      setIsLoading(false);
-      return {
-        success: false,
-        error: error?.message ?? "Google sign-in failed",
-      };
     }
+
+    // If running in Expo Go or tokens were not available or token-signin failed,
+    // optionally perform a mock/dev sign-in with a demo account to allow device testing.
+    if (ENABLE_MOCK_AUTH) {
+      try {
+        const mockRes = await signInWithEmail(
+          DEMO_ADMIN_EMAIL,
+          DEMO_ADMIN_PASSWORD,
+        );
+        if (mockRes.success && mockRes.user) {
+          setUser(mockRes.user);
+          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(mockRes.user));
+          setIsLoading(false);
+          return mockRes;
+        }
+        res = mockRes;
+      } catch (e) {
+        console.warn("Mock sign-in failed", e);
+      }
+    }
+
+    setIsLoading(false);
+    return res;
   };
 
   const logout = async () => {
-    try {
-      await firebaseSignOut(auth);
-    } catch (error) {
-      console.error("Sign out error", error);
-    }
+    const res = await serviceSignOut();
     setUser(null);
     await AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
+    return res;
   };
 
   return (

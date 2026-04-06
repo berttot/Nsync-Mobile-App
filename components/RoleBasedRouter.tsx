@@ -1,18 +1,27 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 export function RoleBasedRouter() {
   const { user, isLoading } = useAuth();
+  const { memberships, loading: workspaceLoading } = useWorkspace();
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect based on authentication and role
+    // Redirect based on authentication, role, and workspace membership
     if (isLoading) return;
 
     if (!user) {
       setTimeout(() => router.replace("/(auth)/login"), 0);
+      return;
+    }
+
+    if (workspaceLoading) return;
+
+    if (!memberships || memberships.length === 0) {
+      setTimeout(() => router.replace("/(user)/no-workspace"), 0);
       return;
     }
 
@@ -21,7 +30,7 @@ export function RoleBasedRouter() {
     } else {
       setTimeout(() => router.replace("/(user)/dashboard"), 0);
     }
-  }, [router, user, isLoading]);
+  }, [router, user, isLoading, memberships, workspaceLoading]);
 
   // Show loading screen while redirecting to login
   return (

@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
+import { Colors } from "@/constants/colors";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-  ActivityIndicator,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { Colors } from '@/constants/colors';
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -27,16 +27,44 @@ export default function DashboardScreen() {
   };
 
   const recentActivities = [
-    { id: 1, action: 'Task "Design UI" completed', time: '2 hours ago' },
-    { id: 2, action: 'New task "API Integration" assigned', time: '4 hours ago' },
-    { id: 3, action: 'Comment on "Database Setup"', time: '6 hours ago' },
+    { id: 1, action: 'Task "Design UI" completed', time: "2 hours ago" },
+    {
+      id: 2,
+      action: 'New task "API Integration" assigned',
+      time: "4 hours ago",
+    },
+    { id: 3, action: 'Comment on "Database Setup"', time: "6 hours ago" },
   ];
 
   const quickActions = [
-    { id: 1, title: 'Create Task', icon: '+', color: Colors.primary.main, onPress: () => router.push('/(tabs)/tasks') },
-    { id: 2, title: 'View Boards', icon: '⊞', color: Colors.secondary.main, onPress: () => router.push('/(tabs)/boards') },
-    { id: 3, title: 'My Tasks', icon: '✓', color: Colors.text.secondary, onPress: () => router.push('/(tabs)/tasks') },
-    { id: 4, title: 'Profile', icon: '👤', color: Colors.text.tertiary, onPress: () => router.push('/(tabs)/profile') },
+    {
+      id: 1,
+      title: "Create Task",
+      icon: "+",
+      color: Colors.primary.main,
+      onPress: () => router.push("/(tabs)/tasks"),
+    },
+    {
+      id: 2,
+      title: "View Boards",
+      icon: "⊞",
+      color: Colors.secondary.main,
+      onPress: () => router.push("/(tabs)/boards"),
+    },
+    {
+      id: 3,
+      title: "My Tasks",
+      icon: "✓",
+      color: Colors.text.secondary,
+      onPress: () => router.push("/(tabs)/tasks"),
+    },
+    {
+      id: 4,
+      title: "Profile",
+      icon: "👤",
+      color: Colors.text.tertiary,
+      onPress: () => router.push("/(tabs)/profile"),
+    },
   ];
 
   const StatCard = ({ title, value, subtitle, color }: any) => (
@@ -58,78 +86,103 @@ export default function DashboardScreen() {
   );
 
   const QuickAction = ({ title, icon, color, onPress }: any) => (
-    <TouchableOpacity style={[styles.quickAction, { backgroundColor: color }]} onPress={onPress}>
+    <TouchableOpacity
+      style={[styles.quickAction, { backgroundColor: color }]}
+      onPress={onPress}
+    >
       <Text style={styles.quickActionIcon}>{icon}</Text>
       <Text style={styles.quickActionTitle}>{title}</Text>
     </TouchableOpacity>
   );
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.welcomeText}>Welcome back!</Text>
-          <Text style={styles.userName}>John Doe</Text>
+    <SafeAreaView edges={["top"]} style={styles.safeArea}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.welcomeText}>Welcome back!</Text>
+            <Text style={styles.userName}>John Doe</Text>
+          </View>
+          <View style={styles.brandingHeader}>
+            <Text style={styles.brandingText}>
+              <Text style={styles.brandingTextN}>N</Text>
+              <Text style={styles.brandingTextSYN}>SYN</Text>
+              <Text style={styles.brandingTextC}>C</Text>
+            </Text>
+            <View style={styles.brandingUnderline} />
+            <Text style={styles.brandingSubtitle}>TEAM WORKSPACE</Text>
+          </View>
         </View>
-        <View style={styles.brandingHeader}>
-          <Text style={styles.brandingText}>
-            <Text style={styles.brandingTextN}>N</Text>
-            <Text style={styles.brandingTextSYN}>SYN</Text>
-            <Text style={styles.brandingTextC}>C</Text>
-          </Text>
-          <View style={styles.brandingUnderline} />
-          <Text style={styles.brandingSubtitle}>TEAM WORKSPACE</Text>
+        {/* Stats Overview */}
+        <View style={styles.statsContainer}>
+          <StatCard
+            title="Total Tasks"
+            value={stats.totalTasks}
+            subtitle="All tasks"
+            color={Colors.primary.main}
+          />
+          <StatCard
+            title="Completed"
+            value={stats.completedTasks}
+            subtitle="Done"
+            color={Colors.secondary.main}
+          />
+          <StatCard
+            title="In Progress"
+            value={stats.inProgressTasks}
+            subtitle="Working"
+            color={Colors.text.secondary}
+          />
+          <StatCard
+            title="To Do"
+            value={stats.todoTasks}
+            subtitle="Pending"
+            color={Colors.text.tertiary}
+          />
         </View>
-      </View>
-                {/* Stats Overview */}
-      <View style={styles.statsContainer}>
-        <StatCard title="Total Tasks" value={stats.totalTasks} subtitle="All tasks" color={Colors.primary.main} />
-        <StatCard title="Completed" value={stats.completedTasks} subtitle="Done" color={Colors.secondary.main} />
-        <StatCard title="In Progress" value={stats.inProgressTasks} subtitle="Working" color={Colors.text.secondary} />
-        <StatCard title="To Do" value={stats.todoTasks} subtitle="Pending" color={Colors.text.tertiary} />
-      </View>
 
-      {/* Quick Actions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.quickActionsContainer}>
-          {quickActions.map((action) => (
-            <QuickAction key={action.id} {...action} />
-          ))}
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.quickActionsContainer}>
+            {quickActions.map((action) => (
+              <QuickAction key={action.id} {...action} />
+            ))}
+          </View>
         </View>
-      </View>
 
-      {/* Recent Activities */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Activities</Text>
-        <View style={styles.activitiesContainer}>
-          {recentActivities.map((activity) => (
-            <ActivityItem key={activity.id} {...activity} />
-          ))}
+        {/* Recent Activities */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recent Activities</Text>
+          <View style={styles.activitiesContainer}>
+            {recentActivities.map((activity) => (
+              <ActivityItem key={activity.id} {...activity} />
+            ))}
+          </View>
         </View>
-      </View>
 
-      {/* Board Overview */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Your Boards</Text>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/boards')}>
-            <Text style={styles.seeAllText}>See all</Text>
-          </TouchableOpacity>
+        {/* Board Overview */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Your Boards</Text>
+            <TouchableOpacity onPress={() => router.push("/(tabs)/boards")}>
+              <Text style={styles.seeAllText}>See all</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.boardsContainer}>
+            <TouchableOpacity style={styles.boardCard}>
+              <Text style={styles.boardTitle}>Development</Text>
+              <Text style={styles.boardStats}>12 tasks • 3 active</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.boardCard}>
+              <Text style={styles.boardTitle}>Design</Text>
+              <Text style={styles.boardStats}>8 tasks • 2 active</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-        <View style={styles.boardsContainer}>
-          <TouchableOpacity style={styles.boardCard}>
-            <Text style={styles.boardTitle}>Development</Text>
-            <Text style={styles.boardStats}>12 tasks • 3 active</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.boardCard}>
-            <Text style={styles.boardTitle}>Design</Text>
-            <Text style={styles.boardStats}>8 tasks • 2 active</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -139,9 +192,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.secondary,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
@@ -152,20 +205,20 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 14,
     color: Colors.text.secondary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   userName: {
     fontSize: 24,
     color: Colors.text.primary,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 4,
   },
   brandingHeader: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   brandingText: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     letterSpacing: 1,
   },
   brandingTextN: {
@@ -187,12 +240,12 @@ const styles = StyleSheet.create({
   brandingSubtitle: {
     fontSize: 8,
     color: Colors.text.primary,
-    fontWeight: '600',
+    fontWeight: "600",
     letterSpacing: 0.5,
   },
   statsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     paddingHorizontal: 20,
     marginBottom: 24,
   },
@@ -212,7 +265,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.primary,
   },
   statTitle: {
@@ -230,32 +283,32 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.primary,
   },
   seeAllText: {
     fontSize: 14,
     color: Colors.secondary.main,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   quickActionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
   quickAction: {
     width: (width - 50) / 2,
     height: 80,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 10,
     shadowColor: Colors.shadow.primary,
     shadowOffset: { width: 0, height: 2 },
@@ -271,7 +324,7 @@ const styles = StyleSheet.create({
   quickActionTitle: {
     fontSize: 14,
     color: Colors.text.inverse,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   activitiesContainer: {
     backgroundColor: Colors.background.primary,
@@ -284,8 +337,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   activityItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
   },
   activityDot: {
@@ -301,7 +354,7 @@ const styles = StyleSheet.create({
   activityAction: {
     fontSize: 14,
     color: Colors.text.primary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   activityTime: {
     fontSize: 12,
@@ -309,8 +362,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   boardsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   boardCard: {
     width: (width - 50) / 2,
@@ -325,7 +378,7 @@ const styles = StyleSheet.create({
   },
   boardTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.primary,
     marginBottom: 8,
   },

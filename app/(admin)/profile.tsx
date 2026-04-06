@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import { Colors } from "@/constants/colors";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'expo-router';
-import { Colors } from '@/constants/colors';
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AdminProfile() {
   const { user, logout } = useAuth();
@@ -17,21 +18,17 @@ export default function AdminProfile() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogout = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-            onPress: () => {
-            logout();
-            router.push('/(auth)/login' as any);
-          },
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign Out",
+        style: "destructive",
+        onPress: () => {
+          logout();
+          router.push("/(auth)/login" as any);
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const ProfileItem = ({ title, value, icon }: any) => (
@@ -45,83 +42,77 @@ export default function AdminProfile() {
   );
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Admin Profile</Text>
-        <Text style={styles.subtitle}>Manage your admin account</Text>
-      </View>
+    <SafeAreaView edges={["top"]} style={styles.safeArea}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Admin Profile</Text>
+          <Text style={styles.subtitle}>Manage your admin account</Text>
+        </View>
 
-      <View style={styles.profileSection}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user?.avatar}</Text>
+        <View style={styles.profileSection}>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{user?.avatar}</Text>
+            </View>
+            <Text style={styles.userName}>{user?.name}</Text>
+            <Text style={styles.userRole}>Administrator</Text>
           </View>
-          <Text style={styles.userName}>{user?.name}</Text>
-          <Text style={styles.userRole}>Administrator</Text>
+
+          <View style={styles.profileInfo}>
+            <ProfileItem title="Email" value={user?.email || ""} icon="📧" />
+            <ProfileItem title="Role" value="Administrator" icon="👑" />
+            <ProfileItem
+              title="Join Date"
+              value={user?.joinDate || ""}
+              icon="📅"
+            />
+            <ProfileItem title="User ID" value={user?.id || ""} icon="🆔" />
+          </View>
         </View>
 
-        <View style={styles.profileInfo}>
-          <ProfileItem
-            title="Email"
-            value={user?.email || ''}
-            icon="📧"
-          />
-          <ProfileItem
-            title="Role"
-            value="Administrator"
-            icon="👑"
-          />
-          <ProfileItem
-            title="Join Date"
-            value={user?.joinDate || ''}
-            icon="📅"
-          />
-          <ProfileItem
-            title="User ID"
-            value={user?.id || ''}
-            icon="🆔"
-          />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Admin Settings</Text>
+
+          <TouchableOpacity style={styles.settingItem}>
+            <Text style={styles.settingIcon}>⚙️</Text>
+            <Text style={styles.settingText}>Account Settings</Text>
+            <Text style={styles.settingArrow}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingItem}>
+            <Text style={styles.settingIcon}>🔔</Text>
+            <Text style={styles.settingText}>Notifications</Text>
+            <Text style={styles.settingArrow}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingItem}>
+            <Text style={styles.settingIcon}>🔐</Text>
+            <Text style={styles.settingText}>Security</Text>
+            <Text style={styles.settingArrow}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingItem}>
+            <Text style={styles.settingIcon}>📊</Text>
+            <Text style={styles.settingText}>System Logs</Text>
+            <Text style={styles.settingArrow}>›</Text>
+          </TouchableOpacity>
         </View>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Admin Settings</Text>
-        
-        <TouchableOpacity style={styles.settingItem}>
-          <Text style={styles.settingIcon}>⚙️</Text>
-          <Text style={styles.settingText}>Account Settings</Text>
-          <Text style={styles.settingArrow}>›</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.settingItem}>
-          <Text style={styles.settingIcon}>🔔</Text>
-          <Text style={styles.settingText}>Notifications</Text>
-          <Text style={styles.settingArrow}>›</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.settingItem}>
-          <Text style={styles.settingIcon}>🔐</Text>
-          <Text style={styles.settingText}>Security</Text>
-          <Text style={styles.settingArrow}>›</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.settingItem}>
-          <Text style={styles.settingIcon}>📊</Text>
-          <Text style={styles.settingText}>System Logs</Text>
-          <Text style={styles.settingArrow}>›</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.section}>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutButtonText}>Sign Out</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+        <View style={styles.section}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutButtonText}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.background.secondary,
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.background.secondary,
@@ -134,7 +125,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.primary,
     marginBottom: 4,
   },
@@ -154,7 +145,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   avatarContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 24,
   },
   avatar: {
@@ -162,18 +153,18 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     backgroundColor: Colors.primary.main,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 16,
   },
   avatarText: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.inverse,
   },
   userName: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.primary,
     marginBottom: 4,
   },
@@ -189,8 +180,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   profileItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border.primary,
@@ -210,20 +201,20 @@ const styles = StyleSheet.create({
   profileValue: {
     fontSize: 16,
     color: Colors.text.primary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   section: {
     margin: 20,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.primary,
     marginBottom: 16,
   },
   settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.background.primary,
     padding: 16,
     borderRadius: 12,
@@ -251,7 +242,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.error,
     padding: 16,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
     shadowColor: Colors.shadow.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -260,7 +251,7 @@ const styles = StyleSheet.create({
   },
   logoutButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.inverse,
   },
 });

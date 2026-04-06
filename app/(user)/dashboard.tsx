@@ -1,49 +1,115 @@
-import React, { useState } from 'react';
+import AppHeader from "@/components/AppHeader";
+import { Colors } from "@/constants/colors";
+import { useAuth } from "@/contexts/AuthContext";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { subscribeBoardsForUserInWorkspace } from "@/services/boards";
+import { subscribeTasksForUserInWorkspace } from "@/services/tasks";
+import { Board } from "@/types/board";
+import { Task } from "@/types/task";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-  Alert,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { useAuth } from '@/contexts/AuthContext';
-import { Colors } from '@/constants/colors';
-import { mockTasks, mockBoards } from '@/constants/mockData';
+    Alert,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
+
+type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
 export default function UserDashboard() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { currentWorkspace, loading: wsLoading } = useWorkspace();
+  const { isLoading } = useAuth();
+  const [myTasks, setMyTasks] = useState<Task[]>([]);
+  const [myBoards, setMyBoards] = useState<Board[]>([]);
 
   if (!user) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <Text>Loading...</Text>
       </View>
     );
   }
 
-  // Filter tasks assigned to current user
-  const myTasks = mockTasks.filter(task => task.assignedTo === user?.id);
-  const completedTasks = myTasks.filter(task => task.status === 'done').length;
-  const inProgressTasks = myTasks.filter(task => task.status === 'in_progress').length;
-  const todoTasks = myTasks.filter(task => task.status === 'todo').length;
+  React.useEffect(() => {
+    if (!currentWorkspace || !user) return;
+    console.debug("dashboard: subscribing to tasks/boards", {
+      workspaceId: currentWorkspace.id,
+      userId: user.id,
+    });
+    const unsubTasks = subscribeTasksForUserInWorkspace(
+      currentWorkspace.id,
+      user.id,
+      setMyTasks,
+    );
+    const unsubBoards = subscribeBoardsForUserInWorkspace(
+      currentWorkspace.id,
+      user.id,
+      setMyBoards,
+    );
+    return () => {
+      try {
+        unsubTasks();
+      } catch (e) {}
+      try {
+        unsubBoards();
+      } catch (e) {}
+    };
+  }, [currentWorkspace?.id, user?.id]);
 
-  // Filter boards where user is a member
-  const myBoards = mockBoards.filter(board => board.members.includes(user?.id || ''));
+  const completedTasks = myTasks.filter(
+    (task) => task.status === "done",
+  ).length;
+  const inProgressTasks = myTasks.filter(
+    (task) => task.status === "in_progress",
+  ).length;
+  const todoTasks = myTasks.filter((task) => task.status === "todo").length;
 
   const recentTasks = myTasks.slice(0, 3);
 
   const quickActions = [
-    { id: 1, title: 'My Tasks', icon: '📝', color: Colors.primary.main, onPress: () => router.push('/(user)/my-tasks') },
-    { id: 2, title: 'View Boards', icon: '📋', color: Colors.text.secondary, onPress: () => router.push('/(user)/boards') },
-    { id: 3, title: 'My Progress', icon: '📊', color: Colors.text.tertiary, onPress: () => Alert.alert('Progress', 'Your progress: ' + Math.round((completedTasks / myTasks.length) * 100) + '%') },
-    { id: 4, title: 'Profile', icon: '👤', color: Colors.warning, onPress: () => router.push('/(user)/profile') },
+    {
+      id: 1,
+      title: "My Tasks",
+      icon: "list-outline" as IconName,
+      color: Colors.primary.main,
+      onPress: () => router.push("/(user)/my-tasks"),
+    },
+    {
+      id: 2,
+      title: "View Boards",
+      icon: "grid-outline" as IconName,
+      color: Colors.info,
+      onPress: () => router.push("/(user)/boards"),
+    },
+    {
+      id: 3,
+      title: "My Progress",
+      icon: "trending-up-outline" as IconName,
+      color: Colors.warning,
+      onPress: () =>
+        Alert.alert(
+          "Progress",
+          "Your progress: " +
+            Math.round((completedTasks / myTasks.length) * 100) +
+            "%",
+        ),
+    },
+    {
+      id: 4,
+      title: "Profile",
+      icon: "person-outline" as IconName,
+      color: Colors.text.secondary,
+      onPress: () => router.push("/(user)/profile"),
+    },
   ];
 
   const StatCard = ({ title, value, subtitle, color }: any) => (
@@ -57,27 +123,49 @@ export default function UserDashboard() {
   const TaskItem = ({ task }: any) => {
     const getStatusColor = (status: string) => {
       switch (status) {
-        case 'done': return Colors.success;
-        case 'in_progress': return Colors.warning;
-        case 'todo': return Colors.text.tertiary;
-        default: return Colors.text.secondary;
+        case "done":
+          return Colors.success;
+        case "in_progress":
+          return Colors.warning;
+        case "todo":
+          return Colors.text.tertiary;
+        default:
+          return Colors.text.secondary;
       }
     };
 
     const getStatusText = (status: string) => {
       switch (status) {
-        case 'done': return 'Completed';
-        case 'in_progress': return 'In Progress';
-        case 'todo': return 'To Do';
-        default: return status;
+        case "done":
+          return "Completed";
+        case "in_progress":
+          return "In Progress";
+        case "todo":
+          return "To Do";
+        default:
+          return status;
       }
     };
 
     return (
-      <TouchableOpacity style={styles.taskItem}>
+      <TouchableOpacity
+        style={styles.taskItem}
+        onPress={() => {
+          if (!task?.boardId) {
+            Alert.alert("Board", "This task is not linked to a board.");
+            return;
+          }
+          router.push(`/board/${String(task.boardId)}`);
+        }}
+      >
         <View style={styles.taskHeader}>
           <Text style={styles.taskTitle}>{task.title}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(task.status) }]}>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: getStatusColor(task.status) },
+            ]}
+          >
             <Text style={styles.statusText}>{getStatusText(task.status)}</Text>
           </View>
         </View>
@@ -88,46 +176,65 @@ export default function UserDashboard() {
   };
 
   const QuickAction = ({ title, icon, color, onPress }: any) => (
-    <TouchableOpacity style={[styles.quickAction, { backgroundColor: color }]} onPress={onPress}>
-      <Text style={styles.quickActionIcon}>{icon}</Text>
+    <TouchableOpacity
+      style={styles.quickAction}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <View style={[styles.quickActionIconWrap, { backgroundColor: color }]}>
+        <Ionicons name={icon} size={20} color={Colors.text.inverse} />
+      </View>
       <Text style={styles.quickActionTitle}>{title}</Text>
     </TouchableOpacity>
   );
 
   const handleLogout = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: () => {
-            logout();
-            // Use router.push instead of router.replace for logout
-            router.push('/(auth)/login' as any);
-          },
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign Out",
+        style: "destructive",
+        onPress: () => {
+          logout();
+          // Use router.push instead of router.replace for logout
+          router.push("/(auth)/login" as any);
         },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      {/** Use the reusable AppHeader component for a modern minimal header */}
-      {(() => {
-        const Header = require('@/components/AppHeader').default;
-        return <Header title="Welcome back!" subtitle="" />;
-      })()}
+      <View style={styles.headerWrap}>
+        <AppHeader title="Welcome back!" />
+      </View>
 
       {/* My Stats */}
       <View style={styles.statsContainer}>
-        <StatCard title="My Tasks" value={myTasks.length} subtitle="Assigned to me" color={Colors.primary.main} />
-        <StatCard title="Completed" value={completedTasks} subtitle="Done" color={Colors.success} />
-        <StatCard title="In Progress" value={inProgressTasks} subtitle="Working" color={Colors.warning} />
-        <StatCard title="To Do" value={todoTasks} subtitle="Pending" color={Colors.text.tertiary} />
+        <StatCard
+          title="My Tasks"
+          value={myTasks.length}
+          subtitle="Assigned to me"
+          color={Colors.primary.main}
+        />
+        <StatCard
+          title="Completed"
+          value={completedTasks}
+          subtitle="Done"
+          color={Colors.success}
+        />
+        <StatCard
+          title="In Progress"
+          value={inProgressTasks}
+          subtitle="Working"
+          color={Colors.warning}
+        />
+        <StatCard
+          title="To Do"
+          value={todoTasks}
+          subtitle="Pending"
+          color={Colors.text.tertiary}
+        />
       </View>
 
       {/* Quick Actions */}
@@ -144,7 +251,7 @@ export default function UserDashboard() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>My Recent Tasks</Text>
-          <TouchableOpacity onPress={() => router.push('/(user)/my-tasks')}>
+          <TouchableOpacity onPress={() => router.push("/(user)/my-tasks")}>
             <Text style={styles.seeAllText}>See all</Text>
           </TouchableOpacity>
         </View>
@@ -159,14 +266,16 @@ export default function UserDashboard() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>My Boards</Text>
-          <TouchableOpacity onPress={() => router.push('/(user)/boards')}>
+          <TouchableOpacity onPress={() => router.push("/(user)/boards")}>
             <Text style={styles.seeAllText}>See all</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.boardsContainer}>
           {myBoards.map((board) => (
             <TouchableOpacity key={board.id} style={styles.boardCard}>
-              <View style={[styles.boardDot, { backgroundColor: board.color }]} />
+              <View
+                style={[styles.boardDot, { backgroundColor: board.color }]}
+              />
               <View style={styles.boardContent}>
                 <Text style={styles.boardTitle}>{board.title}</Text>
                 <Text style={styles.boardDescription}>{board.description}</Text>
@@ -183,18 +292,21 @@ export default function UserDashboard() {
           <View style={styles.progressHeader}>
             <Text style={styles.progressTitle}>Task Completion</Text>
             <Text style={styles.progressValue}>
-              {myTasks.length > 0 ? Math.round((completedTasks / myTasks.length) * 100) : 0}%
+              {myTasks.length > 0
+                ? Math.round((completedTasks / myTasks.length) * 100)
+                : 0}
+              %
             </Text>
           </View>
           <View style={styles.progressBar}>
-            <View 
+            <View
               style={[
-                styles.progressFill, 
-                { 
+                styles.progressFill,
+                {
                   width: `${myTasks.length > 0 ? (completedTasks / myTasks.length) * 100 : 0}%`,
-                  backgroundColor: Colors.success 
-                }
-              ]} 
+                  backgroundColor: Colors.success,
+                },
+              ]}
             />
           </View>
           <Text style={styles.progressSubtitle}>
@@ -211,149 +323,124 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background.secondary,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+  headerWrap: {
     backgroundColor: Colors.background.primary,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border.primary,
   },
-  welcomeText: {
-    fontSize: 14,
-    color: Colors.text.secondary,
-    fontWeight: '500',
+  statsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    marginBottom: 10,
   },
-  userName: {
-    fontSize: 24,
-    color: Colors.text.primary,
-    fontWeight: 'bold',
-    marginTop: 4,
-  },
-  logoutButton: {
-    width: 40,
-    height: 40,
+  statCard: {
+    width: (width - 52) / 2,
     backgroundColor: Colors.background.primary,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 18,
+    borderRadius: 18,
+    marginBottom: 12,
+    marginHorizontal: 2,
+    borderLeftWidth: 4,
     borderWidth: 1,
     borderColor: Colors.border.primary,
   },
-  logoutText: {
-    fontSize: 18,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  statCard: {
-    width: (width - 50) / 2,
-    backgroundColor: Colors.background.primary,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 10,
-    marginHorizontal: 2.5,
-    borderLeftWidth: 4,
-    shadowColor: Colors.shadow.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 3,
-  },
   statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: "800",
     color: Colors.text.primary,
   },
   statTitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: Colors.text.secondary,
     marginTop: 4,
+    fontWeight: "600",
   },
   statSubtitle: {
-    fontSize: 10,
+    fontSize: 11,
     color: Colors.text.tertiary,
     marginTop: 2,
   },
   section: {
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 18,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "800",
     color: Colors.text.primary,
   },
   seeAllText: {
     fontSize: 14,
     color: Colors.primary.main,
-    fontWeight: '600',
+    fontWeight: "700",
   },
   quickActionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
   quickAction: {
-    width: (width - 50) / 2,
-    height: 80,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-    shadowColor: Colors.shadow.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    width: (width - 52) / 2,
+    minHeight: 104,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "flex-start",
+    marginBottom: 12,
+    padding: 16,
+    backgroundColor: Colors.background.primary,
+    borderWidth: 1,
+    borderColor: Colors.border.primary,
   },
   quickActionIcon: {
     fontSize: 24,
     color: Colors.text.inverse,
     marginBottom: 8,
   },
+  quickActionIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
   quickActionTitle: {
     fontSize: 14,
-    color: Colors.text.inverse,
-    fontWeight: '600',
+    color: Colors.text.primary,
+    fontWeight: "700",
   },
   tasksContainer: {
     backgroundColor: Colors.background.primary,
-    borderRadius: 12,
+    borderRadius: 18,
     padding: 16,
-    shadowColor: Colors.shadow.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: Colors.border.primary,
   },
   taskItem: {
     backgroundColor: Colors.background.secondary,
-    padding: 12,
-    borderRadius: 8,
+    padding: 14,
+    borderRadius: 16,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.border.primary,
   },
   taskHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   taskTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "700",
     color: Colors.text.primary,
     flex: 1,
   },
@@ -365,7 +452,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 10,
     color: Colors.text.inverse,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   taskDescription: {
     fontSize: 14,
@@ -378,21 +465,20 @@ const styles = StyleSheet.create({
   },
   boardsContainer: {
     backgroundColor: Colors.background.primary,
-    borderRadius: 12,
+    borderRadius: 18,
     padding: 16,
-    shadowColor: Colors.shadow.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: Colors.border.primary,
   },
   boardCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.background.secondary,
-    padding: 12,
-    borderRadius: 8,
+    padding: 14,
+    borderRadius: 16,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.border.primary,
   },
   boardDot: {
     width: 12,
@@ -405,7 +491,7 @@ const styles = StyleSheet.create({
   },
   boardTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "700",
     color: Colors.text.primary,
     marginBottom: 4,
   },
@@ -415,43 +501,41 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     backgroundColor: Colors.background.primary,
-    borderRadius: 12,
+    borderRadius: 18,
     padding: 20,
-    shadowColor: Colors.shadow.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: Colors.border.primary,
   },
   progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   progressTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "700",
     color: Colors.text.primary,
   },
   progressValue: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "800",
     color: Colors.primary.main,
   },
   progressBar: {
     height: 8,
-    backgroundColor: Colors.border.primary,
+    backgroundColor: Colors.background.secondary,
     borderRadius: 4,
     marginBottom: 8,
+    overflow: "hidden",
   },
   progressFill: {
-    height: '100%',
+    height: "100%",
     borderRadius: 4,
   },
   progressSubtitle: {
     fontSize: 14,
     color: Colors.text.secondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

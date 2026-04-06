@@ -1,60 +1,75 @@
-import React, { useState } from 'react';
+import { Colors } from "@/constants/colors";
+import { mockTasks, mockUsers } from "@/constants/mockData";
+import { useAuth } from "@/contexts/AuthContext";
+import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
-import { Colors } from '@/constants/colors';
-import { mockTasks, mockUsers } from '@/constants/mockData';
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AdminTasks() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState(mockTasks);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState("all");
 
-  const filteredTasks = tasks.filter(task => {
-    if (filter === 'all') return true;
+  const filteredTasks = tasks.filter((task) => {
+    if (filter === "all") return true;
     return task.status === filter;
   });
 
   const handleDeleteTask = (taskId: string) => {
-    Alert.alert(
-      'Delete Task',
-      'Are you sure you want to delete this task?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            setTasks(tasks.filter(t => t.id !== taskId));
-            Alert.alert('Success', 'Task deleted successfully');
-          },
+    Alert.alert("Delete Task", "Are you sure you want to delete this task?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          setTasks(tasks.filter((t) => t.id !== taskId));
+          Alert.alert("Success", "Task deleted successfully");
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const TaskCard = ({ task }: any) => {
-    const assignedUser = mockUsers.find(u => u.id === task.assignedTo);
-    
+    const assignedUser = mockUsers.find((u) => u.id === task.assignedTo);
+
     return (
       <View style={styles.taskCard}>
         <View style={styles.taskHeader}>
           <Text style={styles.taskTitle}>{task.title}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: task.status === 'done' ? Colors.success : task.status === 'in_progress' ? Colors.warning : Colors.text.tertiary }]}>
+          <View
+            style={[
+              styles.statusBadge,
+              {
+                backgroundColor:
+                  task.status === "done"
+                    ? Colors.success
+                    : task.status === "in_progress"
+                      ? Colors.warning
+                      : Colors.text.tertiary,
+              },
+            ]}
+          >
             <Text style={styles.statusText}>
-              {task.status === 'done' ? 'Completed' : task.status === 'in_progress' ? 'In Progress' : 'To Do'}
+              {task.status === "done"
+                ? "Completed"
+                : task.status === "in_progress"
+                  ? "In Progress"
+                  : "To Do"}
             </Text>
           </View>
         </View>
         <Text style={styles.taskDescription}>{task.description}</Text>
         <View style={styles.taskMeta}>
-          <Text style={styles.taskAssignee}>Assigned to: {assignedUser?.name || 'Unassigned'}</Text>
+          <Text style={styles.taskAssignee}>
+            Assigned to: {assignedUser?.name || "Unassigned"}
+          </Text>
           <Text style={styles.taskPriority}>Priority: {task.priority}</Text>
           <Text style={styles.taskDueDate}>Due: {task.dueDate}</Text>
         </View>
@@ -62,7 +77,7 @@ export default function AdminTasks() {
           <TouchableOpacity style={styles.actionButton}>
             <Text style={styles.actionButtonText}>Edit</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.actionButton, styles.deleteButton]}
             onPress={() => handleDeleteTask(task.id)}
           >
@@ -74,59 +89,73 @@ export default function AdminTasks() {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Task Management</Text>
-        <Text style={styles.subtitle}>Manage all project tasks</Text>
-      </View>
+    <SafeAreaView edges={["top"]} style={styles.safeArea}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Task Management</Text>
+          <Text style={styles.subtitle}>Manage all project tasks</Text>
+        </View>
 
-      <View style={styles.filterContainer}>
-        {['all', 'todo', 'in_progress', 'done'].map((status) => (
-          <TouchableOpacity
-            key={status}
-            style={[
-              styles.filterButton,
-              filter === status && styles.filterButtonActive
-            ]}
-            onPress={() => setFilter(status)}
-          >
-            <Text style={[
-              styles.filterButtonText,
-              filter === status && styles.filterButtonTextActive
-            ]}>
-              {status === 'all' ? 'All' : status === 'todo' ? 'To Do' : status === 'in_progress' ? 'In Progress' : 'Done'}
+        <View style={styles.filterContainer}>
+          {["all", "todo", "in_progress", "done"].map((status) => (
+            <TouchableOpacity
+              key={status}
+              style={[
+                styles.filterButton,
+                filter === status && styles.filterButtonActive,
+              ]}
+              onPress={() => setFilter(status)}
+            >
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filter === status && styles.filterButtonTextActive,
+                ]}
+              >
+                {status === "all"
+                  ? "All"
+                  : status === "todo"
+                    ? "To Do"
+                    : status === "in_progress"
+                      ? "In Progress"
+                      : "Done"}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{tasks.length}</Text>
+            <Text style={styles.statLabel}>Total Tasks</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>
+              {tasks.filter((t) => t.status === "done").length}
             </Text>
+            <Text style={styles.statLabel}>Completed</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>
+              {tasks.filter((t) => t.status === "in_progress").length}
+            </Text>
+            <Text style={styles.statLabel}>In Progress</Text>
+          </View>
+        </View>
+
+        <View style={styles.createSection}>
+          <TouchableOpacity style={styles.createButton}>
+            <Text style={styles.createButtonText}>+ Create New Task</Text>
           </TouchableOpacity>
-        ))}
-      </View>
-
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{tasks.length}</Text>
-          <Text style={styles.statLabel}>Total Tasks</Text>
         </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{tasks.filter(t => t.status === 'done').length}</Text>
-          <Text style={styles.statLabel}>Completed</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{tasks.filter(t => t.status === 'in_progress').length}</Text>
-          <Text style={styles.statLabel}>In Progress</Text>
-        </View>
-      </View>
 
-      <View style={styles.createSection}>
-        <TouchableOpacity style={styles.createButton}>
-          <Text style={styles.createButtonText}>+ Create New Task</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.tasksList}>
-        {filteredTasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
-        ))}
-      </View>
-    </ScrollView>
+        <View style={styles.tasksList}>
+          {filteredTasks.map((task) => (
+            <TaskCard key={task.id} task={task} />
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -135,6 +164,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background.secondary,
   },
+  safeArea: { flex: 1, backgroundColor: Colors.background.primary },
   header: {
     padding: 20,
     backgroundColor: Colors.background.primary,
@@ -143,7 +173,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.primary,
     marginBottom: 4,
   },
@@ -152,7 +182,7 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
   },
   filterContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 20,
     backgroundColor: Colors.background.primary,
     borderBottomWidth: 1,
@@ -174,26 +204,26 @@ const styles = StyleSheet.create({
   filterButtonText: {
     fontSize: 14,
     color: Colors.text.secondary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   filterButtonTextActive: {
     color: Colors.text.inverse,
   },
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     padding: 20,
     backgroundColor: Colors.background.primary,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border.primary,
   },
   statCard: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 16,
   },
   statValue: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.primary,
   },
   statLabel: {
@@ -211,7 +241,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary.main,
     padding: 16,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
     shadowColor: Colors.shadow.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -220,7 +250,7 @@ const styles = StyleSheet.create({
   },
   createButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.inverse,
   },
   tasksList: {
@@ -238,14 +268,14 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   taskHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   taskTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.primary,
     flex: 1,
   },
@@ -257,7 +287,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 10,
     color: Colors.text.inverse,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   taskDescription: {
     fontSize: 14,
@@ -282,8 +312,8 @@ const styles = StyleSheet.create({
     color: Colors.text.tertiary,
   },
   taskActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   actionButton: {
     paddingHorizontal: 16,
@@ -293,7 +323,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border.primary,
     minWidth: 80,
-    alignItems: 'center',
+    alignItems: "center",
   },
   deleteButton: {
     backgroundColor: Colors.error,
@@ -301,7 +331,7 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.primary,
   },
 });

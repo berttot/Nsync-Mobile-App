@@ -27,9 +27,9 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [adminCode, setAdminCode] = useState("");
   const router = useRouter();
-  const { register, signInWithGoogle } = useAuth();
+  const { register, signInWithGoogle, isLoading } = useAuth();
 
   const isExpoGo = Constants?.appOwnership === "expo";
 
@@ -40,6 +40,9 @@ export default function RegisterScreen() {
       console.log("Expo redirect URIs:");
       console.log(" - proxy:", proxyUri);
       console.log(" - direct:", directUri);
+      console.log(
+        "NOTE: Add the 'direct' URI to your OAuth client's authorized redirect URIs in Google Cloud/Firebase.",
+      );
     } catch (e) {
       console.warn("Could not build redirect URI", e);
     }
@@ -54,6 +57,10 @@ export default function RegisterScreen() {
       "777513680853-min2lfdfapr58obgci2njbsnegrjie79.apps.googleusercontent.com",
     webClientId:
       "777513680853-9jfr8n91ocuoudl012licook1te4eee4.apps.googleusercontent.com",
+    // Use the Expo proxy redirect (HTTPS) so Google accepts the redirect URI.
+    // After rebuilding, copy the "proxy" URI from app logs and add it to
+    // your Web OAuth client's Authorized redirect URIs in Google Cloud.
+    redirectUri: makeRedirectUri({ useProxy: true }),
     scopes: ["profile", "email"],
     responseType: "id_token",
   });
@@ -74,9 +81,14 @@ export default function RegisterScreen() {
       return;
     }
 
-    setIsLoading(true);
-    const res = await register(fullName.trim(), email.trim(), password);
-    setIsLoading(false);
+    const role =
+      adminCode && adminCode.trim() === "INITADMIN" ? "admin" : "user";
+    const res = await register(
+      fullName.trim(),
+      email.trim(),
+      password,
+      role as any,
+    );
     if (res.success) {
       Alert.alert("Success", "Account created successfully!");
       router.replace("/(auth)/login");
@@ -86,17 +98,14 @@ export default function RegisterScreen() {
   };
 
   const handleGoogleSignUp = async () => {
-    setIsLoading(true);
+    // isLoading is managed by AuthContext
     try {
-      // Trigger Google auth prompt
-      const result = await promptAsync({ useProxy: isExpoGo });
-      console.log("Google auth result:", result);
-      console.log("Auth details:", result?.authentication);
+      // Trigger Google auth prompt using the Expo proxy (HTTPS redirect)
+      const result = await promptAsync({ useProxy: true });
       if (result.type === "success") {
         const idToken = result.authentication?.idToken;
         const accessToken = result.authentication?.accessToken;
         const r = await signInWithGoogle({ idToken, accessToken });
-        setIsLoading(false);
         if (r.success) {
           Alert.alert("Success", "Signed in with Google");
           router.replace("/");
@@ -104,10 +113,27 @@ export default function RegisterScreen() {
           Alert.alert("Error", r.error ?? "Google sign-in failed");
         }
       } else {
-        setIsLoading(false);
+        Alert.alert(
+          "Google sign-in",
+          "Google sign-in did not complete. Use demo account for testing?",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Use demo",
+              onPress: async () => {
+                const r = await signInWithGoogle();
+                if (r.success) {
+                  Alert.alert("Success", "Signed in with demo account");
+                  router.replace("/");
+                } else {
+                  Alert.alert("Error", r.error ?? "Demo sign-in failed");
+                }
+              },
+            },
+          ],
+        );
       }
     } catch (error: any) {
-      setIsLoading(false);
       Alert.alert("Error", error?.message ?? "Google sign-in failed");
     }
   };
@@ -200,6 +226,19 @@ export default function RegisterScreen() {
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
+            />
+          </View>
+
+          {/* Admin Code (optional) */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>ADMIN CODE (OPTIONAL)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter admin code to create admin account"
+              placeholderTextColor="#9CA3AF"
+              value={adminCode}
+              onChangeText={setAdminCode}
+              autoCapitalize="characters"
             />
           </View>
 

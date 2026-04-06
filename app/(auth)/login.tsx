@@ -3,14 +3,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -18,33 +18,17 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, signInWithGoogle } = useAuth();
 
   const handleSignIn = async () => {
     if (!email || !password) {
-      setErrorMessage('Please fill in all fields');
+      setErrorMessage("Please fill in all fields");
       return;
     }
-    setErrorMessage('');
+    setErrorMessage("");
     const result = await login(email, password);
-
-    if (result.success) {
-      const role = result.user?.role;
-      if (role === 'admin') {
-        router.replace('/(admin)/dashboard' as any);
-      } else {
-        router.replace('/(user)/dashboard' as any);
-      }
-    } else {
-      setErrorMessage(result.error || 'Login failed');
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    // Mock Google Sign-in - auto-login as admin for demo
-    const result = await login("admin@nsync.com", "admin123");
 
     if (result.success) {
       const role = result.user?.role;
@@ -54,7 +38,21 @@ export default function LoginScreen() {
         router.replace("/(user)/dashboard" as any);
       }
     } else {
-      Alert.alert("Error", "Google Sign-in failed");
+      setErrorMessage(result.error || "Login failed");
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    const res = await signInWithGoogle();
+    if (res.success) {
+      const role = res.user?.role;
+      if (role === "admin") {
+        router.replace("/(admin)/dashboard" as any);
+      } else {
+        router.replace("/(user)/dashboard" as any);
+      }
+    } else {
+      Alert.alert("Error", res.error ?? "Google Sign-in failed");
     }
   };
 
@@ -100,7 +98,9 @@ export default function LoginScreen() {
 
         {/* Form Section */}
         <View style={styles.formSection}>
-          {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+          {errorMessage ? (
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          ) : null}
           {/* Email Input */}
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>EMAIL ADDRESS</Text>
@@ -416,9 +416,9 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   errorText: {
-    color: '#DC2626',
+    color: "#DC2626",
     marginBottom: 12,
-    textAlign: 'center',
-    fontWeight: '600',
+    textAlign: "center",
+    fontWeight: "600",
   },
 });

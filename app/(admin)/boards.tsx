@@ -1,36 +1,33 @@
-import React, { useState } from 'react';
+import { Colors } from "@/constants/colors";
+import { mockBoards } from "@/constants/mockData";
+import { useAuth } from "@/contexts/AuthContext";
+import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   Alert,
-} from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
-import { Colors } from '@/constants/colors';
-import { mockBoards } from '@/constants/mockData';
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AdminBoards() {
   const { user } = useAuth();
   const [boards, setBoards] = useState(mockBoards);
 
   const handleDeleteBoard = (boardId: string) => {
-    Alert.alert(
-      'Delete Board',
-      'Are you sure you want to delete this board?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            setBoards(boards.filter(b => b.id !== boardId));
-            Alert.alert('Success', 'Board deleted successfully');
-          },
+    Alert.alert("Delete Board", "Are you sure you want to delete this board?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          setBoards(boards.filter((b) => b.id !== boardId));
+          Alert.alert("Success", "Board deleted successfully");
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const BoardCard = ({ board }: any) => (
@@ -56,7 +53,7 @@ export default function AdminBoards() {
         <TouchableOpacity style={styles.actionButton}>
           <Text style={styles.actionButtonText}>Edit</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.actionButton, styles.deleteButton]}
           onPress={() => handleDeleteBoard(board.id)}
         >
@@ -67,39 +64,43 @@ export default function AdminBoards() {
   );
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Board Management</Text>
-        <Text style={styles.subtitle}>Manage all project boards</Text>
-      </View>
-
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{boards.length}</Text>
-          <Text style={styles.statLabel}>Total Boards</Text>
+    <SafeAreaView edges={["top"]} style={styles.safeArea}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Board Management</Text>
+          <Text style={styles.subtitle}>Manage all project boards</Text>
         </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{boards.reduce((sum, b) => sum + b.members.length, 0)}</Text>
-          <Text style={styles.statLabel}>Total Members</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>--</Text>
-          <Text style={styles.statLabel}>Total Tasks</Text>
-        </View>
-      </View>
 
-      <View style={styles.createSection}>
-        <TouchableOpacity style={styles.createButton}>
-          <Text style={styles.createButtonText}>+ Create New Board</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{boards.length}</Text>
+            <Text style={styles.statLabel}>Total Boards</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>
+              {boards.reduce((sum, b) => sum + b.members.length, 0)}
+            </Text>
+            <Text style={styles.statLabel}>Total Members</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>--</Text>
+            <Text style={styles.statLabel}>Total Tasks</Text>
+          </View>
+        </View>
 
-      <View style={styles.boardsList}>
-        {boards.map((board) => (
-          <BoardCard key={board.id} board={board} />
-        ))}
-      </View>
-    </ScrollView>
+        <View style={styles.createSection}>
+          <TouchableOpacity style={styles.createButton}>
+            <Text style={styles.createButtonText}>+ Create New Board</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.boardsList}>
+          {boards.map((board) => (
+            <BoardCard key={board.id} board={board} />
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -108,6 +109,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background.secondary,
   },
+  safeArea: { flex: 1, backgroundColor: Colors.background.primary },
   header: {
     padding: 20,
     backgroundColor: Colors.background.primary,
@@ -116,7 +118,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.primary,
     marginBottom: 4,
   },
@@ -125,20 +127,20 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
   },
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     padding: 20,
     backgroundColor: Colors.background.primary,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border.primary,
   },
   statCard: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 16,
   },
   statValue: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.primary,
   },
   statLabel: {
@@ -156,7 +158,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary.main,
     padding: 16,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
     shadowColor: Colors.shadow.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -165,7 +167,7 @@ const styles = StyleSheet.create({
   },
   createButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.inverse,
   },
   boardsList: {
@@ -183,8 +185,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   boardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 12,
   },
   boardDot: {
@@ -198,7 +200,7 @@ const styles = StyleSheet.create({
   },
   boardTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.primary,
     marginBottom: 4,
   },
@@ -207,19 +209,19 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
   },
   boardStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginBottom: 12,
     paddingVertical: 12,
     backgroundColor: Colors.background.secondary,
     borderRadius: 8,
   },
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   boardActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   actionButton: {
     paddingHorizontal: 16,
@@ -229,7 +231,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border.primary,
     minWidth: 80,
-    alignItems: 'center',
+    alignItems: "center",
   },
   deleteButton: {
     backgroundColor: Colors.error,
@@ -237,7 +239,7 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.primary,
   },
 });

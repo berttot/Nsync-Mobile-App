@@ -1,5 +1,11 @@
+import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import {
+    getAuth,
+    getReactNativePersistence,
+    GoogleAuthProvider,
+    initializeAuth,
+} from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 // Replace the placeholders below with your Firebase project config
@@ -19,7 +25,24 @@ export const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+
+// On React Native, initializeAuth with AsyncStorage persistence so auth state
+// survives reloads. Fall back to getAuth for web or if initialization fails.
+let auth;
+try {
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+  });
+  console.debug("firebase: initializeAuth succeeded (React Native persistence enabled)");
+} catch (e) {
+  console.warn("firebase: initializeAuth failed, falling back to getAuth", e);
+  // If initializeAuth isn't available in this environment, use getAuth
+  // (web or fallback).
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  auth = getAuth(app);
+}
+export { auth };
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
 
