@@ -1,39 +1,85 @@
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
 import React, { useEffect } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import {
+    ActivityIndicator,
+    Alert,
+    BackHandler,
+    Platform,
+    Text,
+    View,
+} from "react-native";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { Colors } from "@/constants/theme";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useSegments } from "expo-router";
 
 export default function UserTabLayout() {
   const colorScheme = useColorScheme();
   const { user, isLoading } = useAuth();
-  const router = useRouter();
+  const { currentWorkspace, memberships } = useWorkspace();
+  const segments = useSegments();
+
+  const isTopLevelUserScreen =
+    segments[0] === "(user)" &&
+    (segments.length === 1 ||
+      [
+        "dashboard",
+        "my-tasks",
+        "boards",
+        "profile",
+        "workspace-settings",
+        "no-workspace",
+      ].includes(String(segments[1])));
 
   useEffect(() => {
-    if (isLoading) return;
-    if (!user) {
-      setTimeout(() => router.replace("/(auth)/login"), 0);
-      return;
-    }
-    if (user.role !== "user") {
-      // Non-users should not access user layout
-      setTimeout(() => router.replace("/(admin)/dashboard"), 0);
-    }
-  }, [user, isLoading, router]);
+    if (Platform.OS !== "android") return;
 
-  // Don't mount the Tabs navigator until auth is verified and role is correct.
-  if (isLoading || !user || user.role !== "user") {
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        if (!isTopLevelUserScreen) {
+          return false;
+        }
+
+        Alert.alert("Exit NSYNC", "Do you want to close the app?", [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Exit",
+            style: "destructive",
+            onPress: () => BackHandler.exitApp(),
+          },
+        ]);
+        return true;
+      },
+    );
+
+    return () => subscription.remove();
+  }, [isTopLevelUserScreen]);
+
+  const currentMembership = memberships.find(
+    (m) => m.workspaceId === currentWorkspace?.id,
+  );
+  const isWorkspaceAdmin = currentMembership?.role === "admin";
+
+  if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color="#22C55E" />
         <Text style={{ marginTop: 12 }}>Loading...</Text>
       </View>
     );
+  }
+
+  if (!user) {
+    return <Redirect href="/(auth)/login" />;
+  }
+
+  if (user.role !== "user") {
+    return <Redirect href="/(admin)/dashboard" />;
   }
 
   return (
@@ -95,6 +141,15 @@ export default function UserTabLayout() {
         }}
       />
       <Tabs.Screen
+        name="workspace-settings"
+        options={{
+          title: "Workspace",
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons size={24} name="settings" color={String(color)} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="index"
         options={{
           href: null,
@@ -108,6 +163,12 @@ export default function UserTabLayout() {
       />
       <Tabs.Screen
         name="board/[id]"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="workspace-members"
         options={{
           href: null,
         }}

@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
+import { Colors } from "@/constants/colors";
+import { mockBoards, mockTasks, mockUsers } from "@/constants/mockData";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-  Alert,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { useAuth } from '@/contexts/AuthContext';
-import { Colors } from '@/constants/colors';
-import { mockUsers, mockBoards, mockTasks } from '@/constants/mockData';
+    Alert,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -22,36 +22,80 @@ export default function AdminDashboard() {
 
   if (!user) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <Text>Loading...</Text>
       </View>
     );
   }
 
   // Use a modern header component
-  const Header = require('@/components/AppHeader').default;
+  const Header = require("@/components/AppHeader").default;
 
   // Calculate admin statistics
   const stats = {
     totalUsers: mockUsers.length,
     totalBoards: mockBoards.length,
     totalTasks: mockTasks.length,
-    completedTasks: mockTasks.filter(t => t.status === 'done').length,
-    activeUsers: mockUsers.filter(u => u.role === 'user').length,
+    completedTasks: mockTasks.filter((t) => t.status === "done").length,
+    activeUsers: mockUsers.filter((u) => u.role === "user").length,
   };
 
   const recentActivities = [
-    { id: 1, action: 'New user "Sarah Smith" registered', time: '2 hours ago', type: 'user' },
-    { id: 2, action: 'Task "Design Login Screen" completed', time: '4 hours ago', type: 'task' },
-    { id: 3, action: 'Board "Marketing" created', time: '6 hours ago', type: 'board' },
-    { id: 4, action: 'Task assigned to "John Doe"', time: '8 hours ago', type: 'task' },
+    {
+      id: 1,
+      action: 'New user "Sarah Smith" registered',
+      time: "2 hours ago",
+      type: "user",
+    },
+    {
+      id: 2,
+      action: 'Task "Design Login Screen" completed',
+      time: "4 hours ago",
+      type: "task",
+    },
+    {
+      id: 3,
+      action: 'Board "Marketing" created',
+      time: "6 hours ago",
+      type: "board",
+    },
+    {
+      id: 4,
+      action: 'Task assigned to "John Doe"',
+      time: "8 hours ago",
+      type: "task",
+    },
   ];
 
   const quickActions = [
-    { id: 1, title: 'Manage Users', icon: '👥', color: Colors.primary.main, onPress: () => router.push('/(admin)/users') },
-    { id: 2, title: 'Create Board', icon: '📋', color: Colors.text.secondary, onPress: () => router.push('/(admin)/boards') },
-    { id: 3, title: 'View Tasks', icon: '✓', color: Colors.text.tertiary, onPress: () => router.push('/(admin)/tasks') },
-    { id: 4, title: 'User Reports', icon: '📊', color: Colors.warning, onPress: () => Alert.alert('Reports', 'Analytics coming soon') },
+    {
+      id: 1,
+      title: "Manage Users",
+      icon: "👥",
+      color: Colors.primary.main,
+      onPress: () => router.push("/(admin)/users"),
+    },
+    {
+      id: 2,
+      title: "Create Board",
+      icon: "📋",
+      color: Colors.text.secondary,
+      onPress: () => router.push("/(admin)/boards"),
+    },
+    {
+      id: 3,
+      title: "View Tasks",
+      icon: "✓",
+      color: Colors.text.tertiary,
+      onPress: () => router.push("/(admin)/tasks"),
+    },
+    {
+      id: 4,
+      title: "User Reports",
+      icon: "📊",
+      color: Colors.warning,
+      onPress: () => Alert.alert("Reports", "Analytics coming soon"),
+    },
   ];
 
   const StatCard = ({ title, value, subtitle, color }: any) => (
@@ -65,10 +109,14 @@ export default function AdminDashboard() {
   const ActivityItem = ({ action, time, type }: any) => {
     const getIcon = () => {
       switch (type) {
-        case 'user': return '👤';
-        case 'task': return '✓';
-        case 'board': return '📋';
-        default: return '📄';
+        case "user":
+          return "👤";
+        case "task":
+          return "✓";
+        case "board":
+          return "📋";
+        default:
+          return "📄";
       }
     };
 
@@ -84,29 +132,26 @@ export default function AdminDashboard() {
   };
 
   const QuickAction = ({ title, icon, color, onPress }: any) => (
-    <TouchableOpacity style={[styles.quickAction, { backgroundColor: color }]} onPress={onPress}>
+    <TouchableOpacity
+      style={[styles.quickAction, { backgroundColor: color }]}
+      onPress={onPress}
+    >
       <Text style={styles.quickActionIcon}>{icon}</Text>
       <Text style={styles.quickActionTitle}>{title}</Text>
     </TouchableOpacity>
   );
 
   const handleLogout = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: () => {
-            logout();
-            // Use router.push instead of router.replace for logout
-            router.push('/(auth)/login' as any);
-          },
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign Out",
+        style: "destructive",
+        onPress: async () => {
+          await logout();
         },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
@@ -115,10 +160,30 @@ export default function AdminDashboard() {
 
       {/* Admin Stats */}
       <View style={styles.statsContainer}>
-        <StatCard title="Total Users" value={stats.totalUsers} subtitle="All users" color={Colors.primary.main} />
-        <StatCard title="Total Boards" value={stats.totalBoards} subtitle="All boards" color={Colors.text.secondary} />
-        <StatCard title="Total Tasks" value={stats.totalTasks} subtitle="All tasks" color={Colors.text.tertiary} />
-        <StatCard title="Completed" value={stats.completedTasks} subtitle="Done" color={Colors.success} />
+        <StatCard
+          title="Total Users"
+          value={stats.totalUsers}
+          subtitle="All users"
+          color={Colors.primary.main}
+        />
+        <StatCard
+          title="Total Boards"
+          value={stats.totalBoards}
+          subtitle="All boards"
+          color={Colors.text.secondary}
+        />
+        <StatCard
+          title="Total Tasks"
+          value={stats.totalTasks}
+          subtitle="All tasks"
+          color={Colors.text.tertiary}
+        />
+        <StatCard
+          title="Completed"
+          value={stats.completedTasks}
+          subtitle="Done"
+          color={Colors.success}
+        />
       </View>
 
       {/* Quick Actions */}
@@ -150,11 +215,15 @@ export default function AdminDashboard() {
             <Text style={styles.userStatLabel}>Active Users</Text>
           </View>
           <View style={styles.userStat}>
-            <Text style={styles.userStatValue}>{mockUsers.filter(u => u.role === 'admin').length}</Text>
+            <Text style={styles.userStatValue}>
+              {mockUsers.filter((u) => u.role === "admin").length}
+            </Text>
             <Text style={styles.userStatLabel}>Admins</Text>
           </View>
           <View style={styles.userStat}>
-            <Text style={styles.userStatValue}>{Math.round((stats.completedTasks / stats.totalTasks) * 100)}%</Text>
+            <Text style={styles.userStatValue}>
+              {Math.round((stats.completedTasks / stats.totalTasks) * 100)}%
+            </Text>
             <Text style={styles.userStatLabel}>Task Completion</Text>
           </View>
         </View>
@@ -169,9 +238,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.secondary,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
@@ -182,12 +251,12 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 14,
     color: Colors.text.secondary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   userName: {
     fontSize: 24,
     color: Colors.text.primary,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 4,
   },
   logoutButton: {
@@ -195,8 +264,8 @@ const styles = StyleSheet.create({
     height: 40,
     backgroundColor: Colors.background.primary,
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
     borderColor: Colors.border.primary,
   },
@@ -204,8 +273,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   statsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     paddingHorizontal: 20,
     marginBottom: 24,
   },
@@ -225,7 +294,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.primary,
   },
   statTitle: {
@@ -244,21 +313,21 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.primary,
     marginBottom: 16,
   },
   quickActionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
   quickAction: {
     width: (width - 50) / 2,
     height: 80,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 10,
     shadowColor: Colors.shadow.primary,
     shadowOffset: { width: 0, height: 2 },
@@ -274,7 +343,7 @@ const styles = StyleSheet.create({
   quickActionTitle: {
     fontSize: 14,
     color: Colors.text.inverse,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   activitiesContainer: {
     backgroundColor: Colors.background.primary,
@@ -287,8 +356,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   activityItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
   },
   activityIcon: {
@@ -301,7 +370,7 @@ const styles = StyleSheet.create({
   activityAction: {
     fontSize: 14,
     color: Colors.text.primary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   activityTime: {
     fontSize: 12,
@@ -309,8 +378,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   userOverview: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     backgroundColor: Colors.background.primary,
     borderRadius: 12,
     padding: 20,
@@ -321,11 +390,11 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   userStat: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   userStatValue: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text.primary,
   },
   userStatLabel: {

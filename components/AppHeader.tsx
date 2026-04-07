@@ -1,7 +1,6 @@
 import { Colors } from "@/constants/colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import React from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -13,7 +12,6 @@ interface AppHeaderProps {
 }
 
 export default function AppHeader({ title, subtitle }: AppHeaderProps) {
-  const router = useRouter();
   const { logout } = useAuth();
   const todayLabel = new Intl.DateTimeFormat("en-US", {
     weekday: "short",
@@ -27,9 +25,8 @@ export default function AppHeader({ title, subtitle }: AppHeaderProps) {
       {
         text: "Sign Out",
         style: "destructive",
-        onPress: () => {
-          logout();
-          router.replace("/(auth)/login" as any);
+        onPress: async () => {
+          await logout();
         },
       },
     ]);

@@ -1,21 +1,12 @@
 import { Colors } from "@/constants/colors";
 import { useAuth } from "@/contexts/AuthContext";
-import { useWorkspace } from "@/contexts/WorkspaceContext";
-import {
-    createWorkspaceInvite,
-    subscribeWorkspaceInvites,
-} from "@/services/workspaces";
 import { Ionicons } from "@expo/vector-icons";
-import * as Clipboard from "expo-clipboard";
-import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
     Alert,
     ScrollView,
-    Share,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
@@ -34,17 +25,6 @@ type SettingItemProps = {
 
 export default function UserProfile() {
   const { user, logout, isLoading } = useAuth();
-  const { currentWorkspace, memberships } = useWorkspace();
-  const router = useRouter();
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [latestInviteCode, setLatestInviteCode] = useState("");
-  const [creatingInvite, setCreatingInvite] = useState(false);
-  const [pendingInviteCount, setPendingInviteCount] = useState(0);
-
-  const currentMembership = memberships.find(
-    (membership) => membership.workspaceId === currentWorkspace?.id,
-  );
-  const canManageInvites = currentMembership?.role === "admin";
 
   const formatJoinDate = (dateValue?: string) => {
     if (!dateValue) return "Not available";
@@ -78,95 +58,11 @@ export default function UserProfile() {
       {
         text: "Sign Out",
         style: "destructive",
-        onPress: () => {
-          logout();
-          router.push("/(auth)/login" as any);
+        onPress: async () => {
+          await logout();
         },
       },
     ]);
-  };
-
-  useEffect(() => {
-    if (!currentWorkspace?.id || !canManageInvites) {
-      setPendingInviteCount(0);
-      return;
-    }
-
-    const unsub = subscribeWorkspaceInvites(currentWorkspace.id, (all) => {
-      const pendingCount = all.filter(
-        (invite) => invite.status === "pending",
-      ).length;
-      setPendingInviteCount(pendingCount);
-    });
-
-    return () => unsub();
-  }, [currentWorkspace?.id, canManageInvites]);
-
-  const handleCreateInvite = async () => {
-    if (!inviteEmail.trim()) {
-      Alert.alert("Error", "Please enter an email to invite");
-      return;
-    }
-
-    if (!currentWorkspace?.id) {
-      Alert.alert("Error", "Select a workspace first");
-      return;
-    }
-
-    if (!canManageInvites) {
-      Alert.alert(
-        "Permission denied",
-        "Only workspace admins can create invites",
-      );
-      return;
-    }
-
-    setCreatingInvite(true);
-    try {
-      const invite = await createWorkspaceInvite(
-        currentWorkspace.id,
-        inviteEmail.trim(),
-        "user",
-        user?.email ?? "system",
-      );
-      setLatestInviteCode(invite.code);
-      setInviteEmail("");
-      Alert.alert(
-        "Invite created",
-        `Share this code with the member: ${invite.code}`,
-      );
-    } catch (e) {
-      console.error(e);
-      Alert.alert("Error", "Failed to create invite");
-    } finally {
-      setCreatingInvite(false);
-    }
-  };
-
-  const handleCopyInviteCode = async () => {
-    if (!latestInviteCode) return;
-
-    try {
-      await Clipboard.setStringAsync(latestInviteCode);
-      Alert.alert("Copied", "Invite code copied");
-    } catch (e) {
-      console.error(e);
-      Alert.alert("Error", "Could not copy invite code");
-    }
-  };
-
-  const handleShareInviteCode = async () => {
-    if (!latestInviteCode || !currentWorkspace?.name) return;
-
-    try {
-      await Share.share({
-        title: `Invite to ${currentWorkspace.name}`,
-        message: `Join ${currentWorkspace.name} with invite code: ${latestInviteCode}`,
-      });
-    } catch (e) {
-      console.error(e);
-      Alert.alert("Error", "Could not share invite code");
-    }
   };
 
   const ProfileItem = ({ title, value, icon }: ProfileItemProps) => (
@@ -260,69 +156,6 @@ export default function UserProfile() {
             <SettingItem title="Notifications" icon="notifications-outline" />
             <SettingItem title="Privacy" icon="shield-checkmark-outline" />
             <SettingItem title="My Statistics" icon="stats-chart-outline" />
-          </View>
-
-          <View style={styles.inviteCard}>
-            <Text style={styles.sectionTitle}>Workspace Invite</Text>
-            <Text style={styles.workspaceInfoText}>
-              Workspace: {currentWorkspace?.name ?? "No workspace selected"}
-            </Text>
-
-            {canManageInvites ? (
-              <>
-                <Text style={styles.inviteMetaText}>
-                  Pending invites: {pendingInviteCount}
-                </Text>
-                <TextInput
-                  style={styles.inviteInput}
-                  placeholder="member@email.com"
-                  placeholderTextColor="#9CA3AF"
-                  value={inviteEmail}
-                  onChangeText={setInviteEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.inviteCreateButton,
-                    creatingInvite && styles.inviteCreateButtonDisabled,
-                  ]}
-                  onPress={handleCreateInvite}
-                  disabled={creatingInvite}
-                >
-                  <Text style={styles.inviteCreateButtonText}>
-                    {creatingInvite ? "Creating..." : "Generate Invite Code"}
-                  </Text>
-                </TouchableOpacity>
-
-                {latestInviteCode ? (
-                  <View style={styles.latestInviteWrap}>
-                    <Text style={styles.latestInviteLabel}>Latest code</Text>
-                    <Text style={styles.latestInviteCode}>
-                      {latestInviteCode}
-                    </Text>
-                    <View style={styles.latestInviteActionsRow}>
-                      <TouchableOpacity
-                        style={styles.inviteGhostButton}
-                        onPress={handleCopyInviteCode}
-                      >
-                        <Text style={styles.inviteGhostButtonText}>Copy</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.inviteGhostButton}
-                        onPress={handleShareInviteCode}
-                      >
-                        <Text style={styles.inviteGhostButtonText}>Share</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ) : null}
-              </>
-            ) : (
-              <Text style={styles.inviteMetaText}>
-                Only workspace admins can generate invite codes.
-              </Text>
-            )}
           </View>
 
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -475,88 +308,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.text.primary,
   },
-  inviteCard: {
-    backgroundColor: Colors.background.primary,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: Colors.border.primary,
-    padding: 20,
-    marginBottom: 14,
-  },
-  workspaceInfoText: {
-    fontSize: 14,
-    color: Colors.text.primary,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  inviteMetaText: {
-    fontSize: 13,
-    color: Colors.text.secondary,
-    marginBottom: 10,
-    lineHeight: 18,
-  },
-  inviteInput: {
-    height: 46,
-    backgroundColor: Colors.background.secondary,
-    borderWidth: 1,
-    borderColor: Colors.border.primary,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    color: Colors.text.primary,
-    marginBottom: 10,
-  },
-  inviteCreateButton: {
-    height: 44,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: Colors.primary.main,
-  },
-  inviteCreateButtonDisabled: {
-    opacity: 0.7,
-  },
-  inviteCreateButtonText: {
-    color: Colors.text.inverse,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  latestInviteWrap: {
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: Colors.border.primary,
-    borderRadius: 12,
-    backgroundColor: Colors.background.secondary,
-    padding: 12,
-  },
-  latestInviteLabel: {
-    fontSize: 12,
-    color: Colors.text.secondary,
-    marginBottom: 4,
-  },
-  latestInviteCode: {
-    fontSize: 18,
-    fontWeight: "800",
-    letterSpacing: 2,
-    color: Colors.primary.main,
-    marginBottom: 10,
-  },
-  latestInviteActionsRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  inviteGhostButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.primary.main,
-    backgroundColor: Colors.background.primary,
-  },
-  inviteGhostButtonText: {
-    color: Colors.primary.main,
-    fontWeight: "700",
-    fontSize: 13,
-  },
+
   logoutButton: {
     borderWidth: 1,
     borderColor: "rgba(239,68,68,0.25)",

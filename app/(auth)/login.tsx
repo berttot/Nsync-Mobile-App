@@ -20,7 +20,7 @@ export default function LoginScreen() {
   const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
-  const { login, isLoading, signInWithGoogle } = useAuth();
+  const { login, isLoading } = useAuth();
 
   const handleSignIn = async () => {
     if (!email || !password) {
@@ -39,20 +39,6 @@ export default function LoginScreen() {
       }
     } else {
       setErrorMessage(result.error || "Login failed");
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    const res = await signInWithGoogle();
-    if (res.success) {
-      const role = res.user?.role;
-      if (role === "admin") {
-        router.replace("/(admin)/dashboard" as any);
-      } else {
-        router.replace("/(user)/dashboard" as any);
-      }
-    } else {
-      Alert.alert("Error", res.error ?? "Google Sign-in failed");
     }
   };
 
@@ -161,28 +147,6 @@ export default function LoginScreen() {
             ) : (
               <Text style={styles.signInButtonText}>Sign in</Text>
             )}
-          </TouchableOpacity>
-
-          {/* OR Separator */}
-          <View style={styles.separatorContainer}>
-            <View style={styles.separatorLine} />
-            <Text style={styles.separatorText}>OR</Text>
-            <View style={styles.separatorLine} />
-          </View>
-
-          {/* Google Sign In */}
-          <TouchableOpacity
-            style={[
-              styles.googleSignInButton,
-              isLoading && styles.signInButtonDisabled,
-            ]}
-            onPress={handleGoogleSignIn}
-            disabled={isLoading}
-          >
-            <View style={styles.googleButtonContent}>
-              <Text style={styles.googleIcon}>G</Text>
-              <Text style={styles.googleButtonText}>Sign in with Google</Text>
-            </View>
           </TouchableOpacity>
         </View>
 
@@ -346,50 +310,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.text.inverse, // White text on green button
-  },
-  separatorContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  separatorLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.border.primary, // Light gray separators
-  },
-  separatorText: {
-    paddingHorizontal: 16,
-    fontSize: 14,
-    color: Colors.text.secondary, // Medium gray text
-  },
-  googleSignInButton: {
-    height: 56,
-    backgroundColor: Colors.background.primary, // White background
-    borderWidth: 1,
-    borderColor: Colors.border.primary, // Light gray border
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  googleButtonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  googleIcon: {
-    width: 24,
-    height: 24,
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#4285F4",
-    marginRight: 12,
-    textAlign: "center",
-    lineHeight: 24,
-  },
-  googleButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text.primary, // Dark text like image
   },
   createAccountContainer: {
     flexDirection: "row",

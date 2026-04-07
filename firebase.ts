@@ -3,7 +3,6 @@ import { initializeApp } from "firebase/app";
 import {
     getAuth,
     getReactNativePersistence,
-    GoogleAuthProvider,
     initializeAuth,
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -45,8 +44,4 @@ try {
   auth = getAuth(app);
 }
 export { auth };
-export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
-
-// Note: For Google sign-in from Expo, obtain an ID token via `expo-auth-session`
-// and pass it to `signInWithCredential(auth, GoogleAuthProvider.credential(idToken))`.

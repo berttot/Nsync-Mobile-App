@@ -51,25 +51,3 @@ Join our community of developers creating universal apps.
 
 Admin: admin@nsync.com / admin123
 User: john@nsync.com / user123
-
-## Google Sign-In on mobile
-
-Google OAuth may be blocked when running inside Expo Go. To test Google Sign-In on a mobile device or emulator, run a development build or install the dev client instead of using Expo Go.
-
-- Quick dev-run (Android emulator or connected device):
-
-```bash
-npx expo run:android
-```
-
-- Alternative (EAS development client):
-
-```bash
-eas build --profile development --platform android
-eas client:install --platform android
-```
-
-Notes:
-
-- Make sure you created platform-specific OAuth client IDs in Google Cloud Console (Android: package name + SHA-1; iOS: bundle id) and added the correct redirect URIs for your dev client.
-- In code, use platform-specific client IDs (`androidClientId`, `iosClientId`, `webClientId`) and avoid relying on the Expo Go proxy for OAuth during testing.

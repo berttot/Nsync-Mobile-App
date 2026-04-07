@@ -1,16 +1,17 @@
 import { db } from "@/firebase";
 import { Workspace, WorkspaceInvite, WorkspaceMember } from "@/types/workspace";
 import {
-    addDoc,
-    collection,
-    doc,
-    getDoc,
-    getDocs,
-    onSnapshot,
-    query,
-    serverTimestamp,
-    updateDoc,
-    where,
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
 } from "firebase/firestore";
 
 const makeInviteCode = () =>
@@ -181,4 +182,71 @@ export const getWorkspaceById = async (id: string) => {
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
   return { id: snap.id, ...(snap.data() as any) } as Workspace;
+};
+
+export const getWorkspaceMembers = async (
+  workspaceId: string,
+): Promise<WorkspaceMember[]> => {
+  const q = query(
+    collection(db, "workspace_members"),
+    where("workspaceId", "==", workspaceId),
+  );
+  const snap = await getDocs(q);
+  const members: WorkspaceMember[] = snap.docs.map((d) => ({
+    id: d.id,
+    ...(d.data() as any),
+  }));
+  return members;
+};
+
+export const subscribeWorkspaceMembers = (
+  workspaceId: string,
+  onChange: (members: WorkspaceMember[]) => void,
+) => {
+  const q = query(
+    collection(db, "workspace_members"),
+    where("workspaceId", "==", workspaceId),
+  );
+
+  return onSnapshot(q, (snap) => {
+    const members: WorkspaceMember[] = snap.docs
+      .map((d) => ({
+        id: d.id,
+        ...(d.data() as any),
+      }))
+      .sort((a, b) => {
+        const aTs = (a.joinedAt as any)?.toMillis?.() ?? a.joinedAt ?? 0;
+        const bTs = (b.joinedAt as any)?.toMillis?.() ?? b.joinedAt ?? 0;
+        return aTs - bTs;
+      });
+    onChange(members);
+  });
+};
+
+export const updateMemberRole = async (
+  memberId: string,
+  newRole: "admin" | "user",
+) => {
+  try {
+    await updateDoc(doc(db, "workspace_members", memberId), {
+      role: newRole,
+    });
+    return { success: true } as const;
+  } catch (error) {
+    return { success: false, error: String(error) } as const;
+  }
+};
+
+export const removeMember = async (memberId: string) => {
+  try {
+    const memberRef = doc(db, "workspace_members", memberId);
+    const snap = await getDoc(memberRef);
+    if (!snap.exists()) {
+      return { success: false, error: "Member not found" } as const;
+    }
+    await deleteDoc(memberRef);
+    return { success: true } as const;
+  } catch (error) {
+    return { success: false, error: String(error) } as const;
+  }
 };

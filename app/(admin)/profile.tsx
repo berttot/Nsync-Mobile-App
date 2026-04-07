@@ -1,6 +1,5 @@
 import { Colors } from "@/constants/colors";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
     Alert,
@@ -14,7 +13,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AdminProfile() {
   const { user, logout } = useAuth();
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogout = () => {
@@ -23,9 +21,8 @@ export default function AdminProfile() {
       {
         text: "Sign Out",
         style: "destructive",
-        onPress: () => {
-          logout();
-          router.push("/(auth)/login" as any);
+        onPress: async () => {
+          await logout();
         },
       },
     ]);

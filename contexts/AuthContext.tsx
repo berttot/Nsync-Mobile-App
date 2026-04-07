@@ -1,14 +1,8 @@
 import {
-    DEMO_ADMIN_EMAIL,
-    DEMO_ADMIN_PASSWORD,
-    ENABLE_MOCK_AUTH,
-} from "@/config/authConfig";
-import {
     getUserProfileFromFirebase,
     registerWithEmail,
     signOut as serviceSignOut,
     signInWithEmail,
-    signInWithGoogleTokens,
     subscribeAuthStateChange,
 } from "@/services/auth";
 import { User } from "@/types/user";
@@ -29,10 +23,6 @@ interface AuthContextType {
     password: string,
     role?: "admin" | "user",
   ) => Promise<{ success: boolean; error?: string }>;
-  signInWithGoogle: (tokens?: {
-    idToken?: string;
-    accessToken?: string;
-  }) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<{ success: boolean; error?: string }>;
   isLoading: boolean;
 }
@@ -117,52 +107,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return res;
   };
 
-  const signInWithGoogle = async (tokens?: {
-    idToken?: string;
-    accessToken?: string;
-  }) => {
-    setIsLoading(true);
-    let res: any = { success: false };
-
-    // Try real Google tokens first when provided
-    if (tokens && (tokens.idToken || tokens.accessToken)) {
-      try {
-        res = await signInWithGoogleTokens(tokens);
-        if (res.success && res.user) {
-          setUser(res.user);
-          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(res.user));
-          setIsLoading(false);
-          return res;
-        }
-      } catch (e) {
-        console.warn("Google token signin failed, falling back if enabled", e);
-      }
-    }
-
-    // If running in Expo Go or tokens were not available or token-signin failed,
-    // optionally perform a mock/dev sign-in with a demo account to allow device testing.
-    if (ENABLE_MOCK_AUTH) {
-      try {
-        const mockRes = await signInWithEmail(
-          DEMO_ADMIN_EMAIL,
-          DEMO_ADMIN_PASSWORD,
-        );
-        if (mockRes.success && mockRes.user) {
-          setUser(mockRes.user);
-          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(mockRes.user));
-          setIsLoading(false);
-          return mockRes;
-        }
-        res = mockRes;
-      } catch (e) {
-        console.warn("Mock sign-in failed", e);
-      }
-    }
-
-    setIsLoading(false);
-    return res;
-  };
-
   const logout = async () => {
     const res = await serviceSignOut();
     setUser(null);
@@ -171,9 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider
-      value={{ user, login, register, signInWithGoogle, logout, isLoading }}
-    >
+    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

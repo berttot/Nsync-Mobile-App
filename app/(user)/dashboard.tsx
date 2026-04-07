@@ -194,10 +194,8 @@ export default function UserDashboard() {
       {
         text: "Sign Out",
         style: "destructive",
-        onPress: () => {
-          logout();
-          // Use router.push instead of router.replace for logout
-          router.push("/(auth)/login" as any);
+        onPress: async () => {
+          await logout();
         },
       },
     ]);
