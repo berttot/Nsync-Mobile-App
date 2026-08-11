@@ -81,14 +81,22 @@ export default function UserDashboard() {
       title: "My Tasks",
       icon: "list-outline" as IconName,
       color: Colors.primary.main,
-      onPress: () => router.push("/(user)/my-tasks"),
+      onPress: () =>
+        router.push({
+          pathname: "/(user)/my-tasks",
+          params: { from: "/(user)/dashboard" },
+        }),
     },
     {
       id: 2,
       title: "View Boards",
       icon: "grid-outline" as IconName,
       color: Colors.info,
-      onPress: () => router.push("/(user)/boards"),
+      onPress: () =>
+        router.push({
+          pathname: "/(user)/boards",
+          params: { from: "/(user)/dashboard" },
+        }),
     },
     {
       id: 3,
@@ -108,7 +116,11 @@ export default function UserDashboard() {
       title: "Profile",
       icon: "person-outline" as IconName,
       color: Colors.text.secondary,
-      onPress: () => router.push("/(user)/profile"),
+      onPress: () =>
+        router.push({
+          pathname: "/(user)/profile",
+          params: { from: "/(user)/dashboard" },
+        }),
     },
   ];
 
@@ -155,7 +167,10 @@ export default function UserDashboard() {
             Alert.alert("Board", "This task is not linked to a board.");
             return;
           }
-          router.push(`/board/${String(task.boardId)}`);
+          router.push({
+            pathname: `/board/${String(task.boardId)}`,
+            params: { from: "/(user)/dashboard" },
+          });
         }}
       >
         <View style={styles.taskHeader}>
@@ -249,7 +264,14 @@ export default function UserDashboard() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>My Recent Tasks</Text>
-          <TouchableOpacity onPress={() => router.push("/(user)/my-tasks")}>
+          <TouchableOpacity
+            onPress={() =>
+              router.push({
+                pathname: "/(user)/my-tasks",
+                params: { from: "/(user)/dashboard" },
+              })
+            }
+          >
             <Text style={styles.seeAllText}>See all</Text>
           </TouchableOpacity>
         </View>
@@ -264,7 +286,14 @@ export default function UserDashboard() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>My Boards</Text>
-          <TouchableOpacity onPress={() => router.push("/(user)/boards")}>
+          <TouchableOpacity
+            onPress={() =>
+              router.push({
+                pathname: "/(user)/boards",
+                params: { from: "/(user)/dashboard" },
+              })
+            }
+          >
             <Text style={styles.seeAllText}>See all</Text>
           </TouchableOpacity>
         </View>

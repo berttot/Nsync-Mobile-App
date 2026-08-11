@@ -10,7 +10,7 @@ import {
 import { User } from "@/types/user";
 import { WorkspaceMember } from "@/types/workspace";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -27,6 +27,7 @@ export default function WorkspaceMembersScreen() {
   const { user } = useAuth();
   const { currentWorkspace, memberships } = useWorkspace();
   const router = useRouter();
+  const params = useLocalSearchParams();
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [memberProfiles, setMemberProfiles] = useState<Record<string, User>>(
     {},
@@ -35,6 +36,24 @@ export default function WorkspaceMembersScreen() {
     null,
   );
 
+  const rawReturnTo = Array.isArray((params as any).from)
+    ? (params as any).from[0]
+    : ((params as any).from as string | undefined);
+
+  const handleBackPress = () => {
+    if (rawReturnTo) {
+      router.replace(rawReturnTo);
+      return;
+    }
+
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace("/(user)/dashboard");
+  };
+
   const currentMembership = memberships.find(
     (m) => m.workspaceId === currentWorkspace?.id,
   );
@@ -42,7 +61,7 @@ export default function WorkspaceMembersScreen() {
 
   useEffect(() => {
     if (!currentWorkspace?.id) {
-      router.back();
+      handleBackPress();
       return;
     }
 
@@ -54,7 +73,7 @@ export default function WorkspaceMembersScreen() {
     );
 
     return () => unsub();
-  }, [currentWorkspace?.id, router]);
+  }, [currentWorkspace?.id]);
 
   useEffect(() => {
     let isActive = true;
@@ -347,15 +366,10 @@ export default function WorkspaceMembersScreen() {
       <SafeAreaView edges={["top"]} style={styles.safeArea}>
         <View style={styles.container}>
           <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
+            style={styles.backButtonWrap}
+            onPress={handleBackPress}
           >
-            <Ionicons
-              name="chevron-back"
-              size={24}
-              color={Colors.text.primary}
-            />
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backButtonText}>‹ Back</Text>
           </TouchableOpacity>
 
           <View style={styles.emptyStateContainer}>
@@ -377,15 +391,13 @@ export default function WorkspaceMembersScreen() {
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <View style={styles.container}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="chevron-back" size={24} color={Colors.text.primary} />
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-
         <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButtonWrap}
+            onPress={handleBackPress}
+          >
+            <Text style={styles.backButtonText}>‹ Back</Text>
+          </TouchableOpacity>
           <Text style={styles.title}>Workspace Members</Text>
           <Text style={styles.subtitle}>
             {currentWorkspace?.name || "Workspace"}
@@ -437,41 +449,46 @@ export default function WorkspaceMembersScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background.secondary,
   },
   container: {
     flex: 1,
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background.secondary,
     paddingHorizontal: 16,
   },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    marginBottom: 8,
+  backButtonWrap: {
+    alignSelf: "flex-start",
+    marginBottom: 6,
   },
-  backText: {
-    fontSize: 16,
-    color: Colors.text.primary,
-    marginLeft: 4,
-    fontWeight: "500",
+  backButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: Colors.primary.main,
   },
   header: {
-    marginBottom: 24,
+    marginHorizontal: -16,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 16,
+    marginBottom: 16,
+    backgroundColor: Colors.background.primary,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.primary,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "700",
+    fontSize: 32,
+    fontWeight: "800",
+    letterSpacing: -0.5,
     color: Colors.text.primary,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   subtitle: {
     fontSize: 16,
     color: Colors.text.secondary,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   memberCount: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.text.tertiary,
   },
   membersList: {
@@ -501,13 +518,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: Colors.text.secondary,
-    backgroundColor: Colors.background.secondary,
+    backgroundColor: Colors.background.primary,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: Colors.border.primary,
   },
   memberCard: {
-    backgroundColor: Colors.background.secondary,
+    backgroundColor: Colors.background.primary,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,

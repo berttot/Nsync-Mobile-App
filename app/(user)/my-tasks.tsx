@@ -4,7 +4,7 @@ import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { subscribeTasksForUserInWorkspace } from "@/services/tasks";
 import { Task } from "@/types/task";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
     Alert,
@@ -29,6 +29,24 @@ export default function UserTasks() {
     null,
   );
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const rawReturnTo = Array.isArray((params as any).from)
+    ? (params as any).from[0]
+    : ((params as any).from as string | undefined);
+
+  const handleBackPress = () => {
+    if (rawReturnTo) {
+      router.replace(rawReturnTo);
+      return;
+    }
+
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace("/(user)/dashboard");
+  };
 
   useEffect(() => {
     if (!user || !currentWorkspace?.id) {
@@ -67,58 +85,88 @@ export default function UserTasks() {
     return tasks.filter((task) => (task.status ?? "todo") === filter);
   }, [tasks, filter]);
 
+  const formatDueDate = (value?: string) => {
+    if (!value) return "Not set";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString();
+  };
+
   const TaskCard = ({ task }: { task: Task }) => {
     const rawBoardId = String(task.boardId ?? "");
     const hasValidBoardId = !!rawBoardId && !/^\[.*\]$/.test(rawBoardId);
 
-    const getStatusColor = (status: TaskStatus) => {
+    const getStatusMeta = (status: TaskStatus) => {
       switch (status) {
         case "done":
-          return Colors.success;
+          return {
+            label: "Completed",
+            accent: Colors.success,
+            softBg: "rgba(34,197,94,0.12)",
+          };
         case "in_progress":
-          return Colors.warning;
+          return {
+            label: "In Progress",
+            accent: Colors.warning,
+            softBg: "rgba(245,158,11,0.14)",
+          };
         case "todo":
-          return Colors.text.tertiary;
+          return {
+            label: "To Do",
+            accent: Colors.text.secondary,
+            softBg: "rgba(107,114,128,0.14)",
+          };
         default:
-          return Colors.text.secondary;
+          return {
+            label: "To Do",
+            accent: Colors.text.secondary,
+            softBg: "rgba(107,114,128,0.14)",
+          };
       }
     };
 
-    const getStatusText = (status: TaskStatus) => {
-      switch (status) {
-        case "done":
-          return "Completed";
-        case "in_progress":
-          return "In Progress";
-        case "todo":
-          return "To Do";
-        default:
-          return status;
-      }
-    };
+    const statusMeta = getStatusMeta(
+      (task.status as TaskStatus | undefined) ?? "todo",
+    );
 
     return (
       <View style={styles.taskCard}>
-        <View style={styles.taskHeader}>
-          <Text style={styles.taskTitle}>{task.title || "Untitled Task"}</Text>
+        <View style={styles.taskTopRow}>
           <View
             style={[
-              styles.statusBadge,
+              styles.statusPill,
               {
-                backgroundColor: getStatusColor(
-                  (task.status as TaskStatus | undefined) ?? "todo",
-                ),
+                backgroundColor: statusMeta.softBg,
+                borderColor: statusMeta.accent,
               },
             ]}
           >
-            <Text style={styles.statusText}>
-              {getStatusText((task.status as TaskStatus | undefined) ?? "todo")}
+            <View
+              style={[styles.statusDot, { backgroundColor: statusMeta.accent }]}
+            />
+            <Text style={[styles.statusPillText, { color: statusMeta.accent }]}>
+              {statusMeta.label}
             </Text>
           </View>
+          <Ionicons
+            name="chevron-forward-outline"
+            size={18}
+            color={Colors.text.tertiary}
+          />
         </View>
-        <Text style={styles.taskDescription}>
+
+        <View style={styles.taskHeader}>
+          <Text style={styles.taskTitle} numberOfLines={2}>
+            {task.title || "Untitled Task"}
+          </Text>
+        </View>
+
+        <Text style={styles.taskDescription} numberOfLines={2}>
           {task.description || "No description provided."}
         </Text>
+
+        <View style={styles.taskDivider} />
+
         <View style={styles.taskFooter}>
           <View style={styles.taskMetaRow}>
             <Ionicons
@@ -126,13 +174,16 @@ export default function UserTasks() {
               size={14}
               color={Colors.text.tertiary}
             />
-            <Text style={styles.taskDueDate}>
-              Due: {task.dueDate || "Not set"}
-            </Text>
+            <Text style={styles.taskDueDate}>Due: {formatDueDate(task.dueDate)}</Text>
           </View>
           {hasValidBoardId ? (
             <TouchableOpacity
-              onPress={() => router.push(`/board/${rawBoardId}`)}
+              onPress={() =>
+                router.push({
+                  pathname: `/board/${rawBoardId}`,
+                  params: { from: "/(user)/my-tasks" },
+                })
+              }
             >
               <View style={styles.boardLinkWrap}>
                 <Text style={styles.openBoardLink}>Open board</Text>
@@ -164,6 +215,14 @@ export default function UserTasks() {
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
+          <TouchableOpacity
+            onPress={handleBackPress}
+            style={styles.backButtonWrap}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Text style={styles.backButtonText}>‹ Back</Text>
+          </TouchableOpacity>
           <Text style={styles.title}>My Tasks</Text>
           <Text style={styles.subtitle}>
             Your assigned tasks in this workspace
@@ -269,7 +328,12 @@ export default function UserTasks() {
               </Text>
               <TouchableOpacity
                 style={styles.emptyButton}
-                onPress={() => router.push("/boards")}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(user)/boards",
+                    params: { from: "/(user)/my-tasks" },
+                  })
+                }
               >
                 <Text style={styles.emptyButtonText}>Browse Boards</Text>
               </TouchableOpacity>
@@ -298,6 +362,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.primary,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border.primary,
+  },
+  backButtonWrap: {
+    alignSelf: "flex-start",
+    marginBottom: 8,
+  },
+  backButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: Colors.primary.main,
   },
   title: {
     fontSize: 32,
@@ -417,38 +490,57 @@ const styles = StyleSheet.create({
   taskCard: {
     backgroundColor: Colors.background.primary,
     borderRadius: 18,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     marginBottom: 14,
     borderWidth: 1,
     borderColor: Colors.border.primary,
   },
-  taskHeader: {
+  taskTopRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 10,
+  },
+  taskHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
   },
   taskTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "800",
     color: Colors.text.primary,
     flex: 1,
   },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+  statusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
   },
-  statusText: {
-    fontSize: 10,
-    color: Colors.text.inverse,
-    fontWeight: "600",
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 99,
+  },
+  statusPillText: {
+    fontSize: 11,
+    fontWeight: "700",
   },
   taskDescription: {
     fontSize: 14,
     color: Colors.text.secondary,
-    marginBottom: 12,
+    marginBottom: 10,
     lineHeight: 20,
+  },
+  taskDivider: {
+    height: 1,
+    backgroundColor: Colors.border.primary,
+    marginBottom: 10,
   },
   taskFooter: {
     flexDirection: "row",
@@ -471,14 +563,18 @@ const styles = StyleSheet.create({
     color: Colors.text.tertiary,
   },
   openBoardLink: {
-    fontSize: 12,
+    fontSize: 13,
     color: Colors.primary.main,
     fontWeight: "700",
   },
   boardLinkWrap: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 6,
+    backgroundColor: "rgba(34,197,94,0.10)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
   loadingBox: {
     marginHorizontal: 20,

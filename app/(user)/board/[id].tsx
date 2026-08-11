@@ -31,6 +31,9 @@ export default function BoardDetail() {
   const rawBoardId = Array.isArray((params as any).boardId)
     ? (params as any).boardId[0]
     : ((params as any).boardId as string | undefined);
+  const rawReturnTo = Array.isArray((params as any).from)
+    ? (params as any).from[0]
+    : ((params as any).from as string | undefined);
   let boardId = Array.isArray(params.id)
     ? params.id[0]
     : (params.id as string | undefined);
@@ -53,6 +56,20 @@ export default function BoardDetail() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+
+  const handleBackPress = () => {
+    if (rawReturnTo) {
+      router.replace(rawReturnTo);
+      return;
+    }
+
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace("/(user)/boards");
+  };
 
   useEffect(() => {
     if (!resolvedBoardId) return;
@@ -143,7 +160,7 @@ export default function BoardDetail() {
       <SafeAreaView edges={["top"]} style={styles.safeArea}>
         <View style={styles.container}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()}>
+            <TouchableOpacity onPress={handleBackPress}>
               <Text style={styles.back}>‹ Back</Text>
             </TouchableOpacity>
             <Text style={styles.title}>Board</Text>
@@ -157,7 +174,7 @@ export default function BoardDetail() {
             </Text>
             <TouchableOpacity
               style={styles.emptyButton}
-              onPress={() => router.replace("/boards")}
+              onPress={() => router.replace("/(user)/boards")}
             >
               <Text style={styles.emptyButtonText}>Go to Boards</Text>
             </TouchableOpacity>
@@ -171,7 +188,7 @@ export default function BoardDetail() {
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={handleBackPress}>
             <Text style={styles.back}>‹ Back</Text>
           </TouchableOpacity>
           <Text style={styles.title}>Board</Text>
@@ -307,7 +324,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border.primary,
   },
-  back: { color: Colors.primary.main },
+  back: { color: Colors.primary.main, fontSize: 15, fontWeight: "600" },
   title: { fontSize: 18, fontWeight: "700", color: Colors.text.primary },
   add: {
     paddingHorizontal: 12,
@@ -445,6 +462,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 24,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: Colors.text.primary,
+    marginBottom: 8,
+    textAlign: "center",
   },
   emptyText: {
     color: Colors.text.secondary,

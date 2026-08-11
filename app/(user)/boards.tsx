@@ -2,8 +2,9 @@ import { Colors } from "@/constants/colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { createBoard, subscribeBoardsForWorkspace } from "@/services/boards";
+import { subscribeTasksForWorkspace } from "@/services/tasks";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
     Alert,
@@ -21,10 +22,29 @@ export default function UserBoards() {
   const { user } = useAuth();
   const { currentWorkspace } = useWorkspace();
   const [boards, setBoards] = useState<any[]>([]);
+  const [totalTasks, setTotalTasks] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const rawReturnTo = Array.isArray((params as any).from)
+    ? (params as any).from[0]
+    : ((params as any).from as string | undefined);
+
+  const handleBackPress = () => {
+    if (rawReturnTo) {
+      router.replace(rawReturnTo);
+      return;
+    }
+
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace("/(user)/dashboard");
+  };
 
   const formatCreatedAt = (value: any) => {
     if (!value) return "Just now";
@@ -42,6 +62,19 @@ export default function UserBoards() {
     const unsub = subscribeBoardsForWorkspace(currentWorkspace.id, setBoards);
     return () => unsub();
   }, [currentWorkspace?.id, user?.id]);
+
+  useEffect(() => {
+    if (!currentWorkspace?.id) {
+      setTotalTasks(0);
+      return;
+    }
+
+    const unsub = subscribeTasksForWorkspace(currentWorkspace.id, (tasks) => {
+      setTotalTasks(tasks.length);
+    });
+
+    return () => unsub();
+  }, [currentWorkspace?.id]);
 
   const handleCreateBoard = async () => {
     if (!newTitle.trim()) {
@@ -63,7 +96,10 @@ export default function UserBoards() {
       setShowCreate(false);
       setNewTitle("");
       setNewDescription("");
-      router.push(`/board/${res.id}`);
+      router.push({
+        pathname: `/board/${res.id}`,
+        params: { from: "/(user)/boards" },
+      });
     } catch (e: any) {
       Alert.alert("Error", e?.message || "Could not create board");
     }
@@ -72,54 +108,45 @@ export default function UserBoards() {
   const BoardCard = ({ board }: any) => (
     <TouchableOpacity
       style={styles.boardCard}
-      onPress={() => router.push(`/board/${String(board.id)}`)}
+      onPress={() =>
+        router.push({
+          pathname: `/board/${String(board.id)}`,
+          params: { from: "/(user)/boards" },
+        })
+      }
       activeOpacity={0.8}
     >
       <View style={styles.boardHeader}>
-        <View style={[styles.boardDot, { backgroundColor: board.color }]} />
+        <View style={styles.boardLeftHeader}>
+          <View style={[styles.boardDot, { backgroundColor: board.color }]} />
+          <Text style={styles.boardBadge}>Board</Text>
+        </View>
+        <Ionicons
+          name="chevron-forward-outline"
+          size={18}
+          color={Colors.text.tertiary}
+        />
+      </View>
+      <View style={styles.boardInfo}>
+        <Text style={styles.boardTitle}>{board.title}</Text>
+        <Text style={styles.boardDescription} numberOfLines={2}>
+          {board.description || "No description yet"}
+        </Text>
+      </View>
+      <View style={styles.boardMetaRow}>
         <View style={styles.boardInfo}>
-          <Text style={styles.boardTitle}>{board.title}</Text>
-          <Text style={styles.boardDescription}>
-            {board.description || "No description"}
-          </Text>
+          <View style={styles.boardDateWrap}>
+            <Ionicons
+              name="calendar-outline"
+              size={14}
+              color={Colors.text.tertiary}
+            />
+            <Text style={styles.boardDate}>
+              Created {formatCreatedAt(board.createdAt)}
+            </Text>
+          </View>
         </View>
-      </View>
-      <View style={styles.boardStats}>
-        <View style={styles.statItem}>
-          <Ionicons
-            name="people-outline"
-            size={16}
-            color={Colors.text.secondary}
-          />
-          <Text style={styles.statValue}>
-            {Array.isArray(board.members) ? board.members.length : 0}
-          </Text>
-          <Text style={styles.statLabel}>Members</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Ionicons
-            name="checkbox-outline"
-            size={16}
-            color={Colors.text.secondary}
-          />
-          <Text style={styles.statValue}>--</Text>
-          <Text style={styles.statLabel}>Tasks</Text>
-        </View>
-      </View>
-      <View style={styles.boardFooter}>
-        <View style={styles.boardDateWrap}>
-          <Ionicons
-            name="calendar-outline"
-            size={14}
-            color={Colors.text.tertiary}
-          />
-          <Text style={styles.boardDate}>
-            {formatCreatedAt(board.createdAt)}
-          </Text>
-        </View>
-        <View style={styles.boardRoleWrap}>
-          <Text style={styles.boardRole}>Member</Text>
-        </View>
+        <Text style={styles.boardOpenText}>Open board</Text>
       </View>
     </TouchableOpacity>
   );
@@ -128,6 +155,14 @@ export default function UserBoards() {
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
+          <TouchableOpacity
+            onPress={handleBackPress}
+            style={styles.backButtonWrap}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Text style={styles.backButtonText}>‹ Back</Text>
+          </TouchableOpacity>
           <Text style={styles.title}>My Boards</Text>
           <Text style={styles.subtitle}>Boards you have access to</Text>
           <TouchableOpacity
@@ -159,7 +194,7 @@ export default function UserBoards() {
             <Text style={styles.statLabel}>Total Members</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>--</Text>
+            <Text style={styles.statValue}>{totalTasks}</Text>
             <Text style={styles.statLabel}>Total Tasks</Text>
           </View>
         </View>
@@ -246,6 +281,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border.primary,
   },
+  backButtonWrap: {
+    alignSelf: "flex-start",
+    marginBottom: 8,
+  },
+  backButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: Colors.primary.main,
+  },
   createBtn: {
     marginTop: 14,
     alignSelf: "flex-start",
@@ -309,7 +353,8 @@ const styles = StyleSheet.create({
   boardCard: {
     backgroundColor: Colors.background.primary,
     borderRadius: 18,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     marginBottom: 14,
     borderWidth: 1,
     borderColor: Colors.border.primary,
@@ -317,13 +362,25 @@ const styles = StyleSheet.create({
   boardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  boardLeftHeader: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   boardDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    marginRight: 12,
+    marginRight: 8,
+  },
+  boardBadge: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: Colors.text.tertiary,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
   boardInfo: {
     flex: 1,
@@ -337,23 +394,16 @@ const styles = StyleSheet.create({
   boardDescription: {
     fontSize: 14,
     color: Colors.text.secondary,
+    lineHeight: 20,
   },
-  boardStats: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 12,
-    paddingVertical: 12,
-    backgroundColor: Colors.background.secondary,
-    borderRadius: 14,
-  },
-  statItem: {
-    alignItems: "center",
-    gap: 4,
-  },
-  boardFooter: {
+  boardMetaRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border.primary,
   },
   boardDateWrap: {
     flexDirection: "row",
@@ -364,16 +414,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.text.tertiary,
   },
-  boardRoleWrap: {
-    backgroundColor: Colors.background.secondary,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  boardRole: {
+  boardOpenText: {
     fontSize: 12,
     color: Colors.primary.main,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   emptyState: {
     alignItems: "center",

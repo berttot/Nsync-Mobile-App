@@ -2,23 +2,23 @@ import { Colors } from "@/constants/colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import {
-    createWorkspaceInvite,
-    subscribeWorkspaceInvites,
+  createWorkspaceInvite,
+  subscribeWorkspaceInvites,
 } from "@/services/workspaces";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    Share,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -30,6 +30,24 @@ export default function WorkspaceSettingsScreen() {
   const [latestInviteCode, setLatestInviteCode] = useState("");
   const [creatingInvite, setCreatingInvite] = useState(false);
   const [pendingInviteCount, setPendingInviteCount] = useState(0);
+  const params = useLocalSearchParams();
+  const rawReturnTo = Array.isArray((params as any).from)
+    ? (params as any).from[0]
+    : ((params as any).from as string | undefined);
+
+  const handleBackPress = () => {
+    if (rawReturnTo) {
+      router.replace(rawReturnTo);
+      return;
+    }
+
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace("/(user)/dashboard");
+  };
 
   const currentMembership = memberships.find(
     (membership) => membership.workspaceId === currentWorkspace?.id,
@@ -123,6 +141,14 @@ export default function WorkspaceSettingsScreen() {
     return (
       <SafeAreaView edges={["top"]} style={styles.safeArea}>
         <View style={styles.container}>
+          <TouchableOpacity
+            onPress={handleBackPress}
+            style={styles.adminBackButtonWrap}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Text style={styles.backButtonText}>‹ Back</Text>
+          </TouchableOpacity>
           <View style={styles.emptyStateContainer}>
             <Ionicons
               name="shield-outline"
@@ -144,6 +170,14 @@ export default function WorkspaceSettingsScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={styles.header}>
+            <TouchableOpacity
+              onPress={handleBackPress}
+              style={styles.backButtonWrap}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
+              <Text style={styles.backButtonText}>‹ Back</Text>
+            </TouchableOpacity>
             <Text style={styles.title}>Workspace Settings</Text>
             <Text style={styles.subtitle}>
               {currentWorkspace?.name || "Workspace"}
@@ -228,7 +262,12 @@ export default function WorkspaceSettingsScreen() {
 
             <TouchableOpacity
               style={styles.manageButton}
-              onPress={() => router.push("/(user)/workspace-members")}
+              onPress={() =>
+                router.push({
+                  pathname: "/(user)/workspace-members",
+                  params: { from: "/(user)/workspace-settings" },
+                })
+              }
             >
               <Ionicons name="people" size={20} color={Colors.primary.main} />
               <Text style={styles.manageButtonText}>Go to Members</Text>
@@ -256,21 +295,43 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 0,
     paddingBottom: 28,
   },
   header: {
-    marginBottom: 24,
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 16,
+    marginBottom: 16,
+    backgroundColor: Colors.background.primary,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.primary,
+  },
+  backButtonWrap: {
+    alignSelf: "flex-start",
+    marginBottom: 6,
+  },
+  adminBackButtonWrap: {
+    alignSelf: "flex-start",
+    marginTop: 16,
+    marginLeft: 20,
+    marginBottom: 8,
+  },
+  backButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: Colors.primary.main,
   },
   title: {
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: "800",
-    letterSpacing: -0.6,
+    letterSpacing: -0.5,
     color: Colors.text.primary,
     marginBottom: 6,
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: Colors.text.secondary,
   },
   card: {

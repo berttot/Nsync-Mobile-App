@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import {
     Alert,
@@ -25,6 +26,25 @@ type SettingItemProps = {
 
 export default function UserProfile() {
   const { user, logout, isLoading } = useAuth();
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const rawReturnTo = Array.isArray((params as any).from)
+    ? (params as any).from[0]
+    : ((params as any).from as string | undefined);
+
+  const handleBackPress = () => {
+    if (rawReturnTo) {
+      router.replace(rawReturnTo);
+      return;
+    }
+
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace("/(user)/dashboard");
+  };
 
   const formatJoinDate = (dateValue?: string) => {
     if (!dateValue) return "Not available";
@@ -115,6 +135,14 @@ export default function UserProfile() {
           )}
 
           <View style={styles.header}>
+            <TouchableOpacity
+              onPress={handleBackPress}
+              style={styles.backButtonWrap}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
+              <Text style={styles.backButtonText}>‹ Back</Text>
+            </TouchableOpacity>
             <Text style={styles.title}>My Profile</Text>
             <Text style={styles.subtitle}>Manage your account settings</Text>
           </View>
@@ -179,21 +207,37 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 0,
     paddingBottom: 28,
   },
   header: {
-    marginBottom: 14,
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 16,
+    marginBottom: 16,
+    backgroundColor: Colors.background.primary,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.primary,
+  },
+  backButtonWrap: {
+    alignSelf: "flex-start",
+    marginBottom: 6,
+  },
+  backButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: Colors.primary.main,
   },
   title: {
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: "800",
-    letterSpacing: -0.6,
+    letterSpacing: -0.5,
     color: Colors.text.primary,
     marginBottom: 6,
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: Colors.text.secondary,
   },
   card: {

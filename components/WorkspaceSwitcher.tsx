@@ -4,8 +4,8 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
     FlatList,
-  StyleSheet,
     Modal,
+    StyleSheet,
     Text,
     TouchableOpacity,
     View,
@@ -115,12 +115,13 @@ export default function WorkspaceSwitcher() {
 
 const styles = StyleSheet.create({
   button: {
-    flex: 1,
-    minWidth: 0,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 14,
+    width: 190,
+    maxWidth: 190,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
     backgroundColor: Colors.background.secondary,
+    marginRight: 8,
     borderWidth: 1,
     borderColor: Colors.border.primary,
   },
@@ -128,13 +129,12 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     fontSize: 11,
     fontWeight: "600",
-    marginBottom: 3,
-    letterSpacing: 0.2,
+    marginBottom: 2,
   },
   buttonText: {
     color: Colors.text.primary,
-    fontWeight: "800",
-    fontSize: 15,
+    fontWeight: "700",
+    fontSize: 13,
   },
   overlay: {
     flex: 1,

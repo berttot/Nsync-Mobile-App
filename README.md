@@ -1,53 +1,107 @@
-# Welcome to your Expo app 👋
+# NSync Mobile Application
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+NSync is a mobile-first team workspace app built with Expo and React Native. It helps users collaborate through role-based dashboards, boards, tasks, and workspace management.
 
-## Get started
+## What this app does
 
-1. Install dependencies
+This application is designed for team collaboration and task tracking. Users can:
+
+- sign up or log in securely
+- view a personal dashboard with task summaries
+- access boards and assigned tasks
+- manage workspace members and settings
+- use an admin dashboard for higher-level oversight
+
+The app uses Firebase for authentication and Firestore data storage, and it is structured around Expo Router with role-based screens for users and admins.
+
+## Tech stack
+
+- React Native
+- Expo
+- Expo Router
+- TypeScript
+- Firebase Authentication
+- Firestore
+- Async Storage
+
+## Features
+
+- Authentication flow for sign in and sign up
+- User dashboard with quick actions
+- Board and task management screens
+- Workspace member and settings views
+- Admin dashboard and management screens
+- Responsive mobile experience for Expo web, Android, and iOS
+
+## Prerequisites
+
+Before running the app, make sure you have:
+
+- Node.js 18 or newer
+- npm
+- Expo CLI (or use `npx expo`)
+- Android Studio / emulator for Android testing (optional)
+- Xcode for iOS testing (optional)
+
+## Getting started
+
+1. Clone the repository
+
+   ```bash
+   git clone <your-repository-url>
+   cd NysncMobileApplication
+   ```
+
+2. Install dependencies
 
    ```bash
    npm install
    ```
 
-2. Start the app
+3. Start the app
+
+   ### Web preview
 
    ```bash
-   npx expo start
+   npm run web
    ```
 
-In the output, you'll find options to open the app in a
+   ### Android
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   ```bash
+   npm run android
+   ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+   ### iOS
 
-## Get a fresh project
+   ```bash
+   npm run ios
+   ```
 
-When you're ready, run:
+If Expo asks to use a different port because one is already in use, choose the suggested alternative.
 
-```bash
-npm run reset-project
-```
+## Firebase setup
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+This project uses Firebase for authentication and data storage.
 
-## Learn more
+1. Create a Firebase project in the Firebase console.
+2. Enable Authentication and Firestore.
+3. Update the configuration values in `firebase.ts` with your own project credentials.
+4. If you want to create an admin account during development, use the registration code `INITADMIN`.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Project structure
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- `app/` – screens and routes for auth, user, and admin flows
+- `components/` – reusable UI components
+- `contexts/` – authentication and workspace state
+- `services/` – Firebase and API service integrations
+- `types/` – TypeScript models
+- `constants/` – shared theme, colors, and mock data
 
-## Join the community
+## Notes
 
-Join our community of developers creating universal apps.
+This project is currently a development app and may continue to evolve as additional features are added.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## License
 
-Admin: admin@nsync.com / admin123
-User: john@nsync.com / user123
+This project is for educational and development purposes.
